@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'">
+<title>CleanOS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0b0d11; --surface: #13161d; --surface2: #1c2030;
+    --border: #252a38; --accent: #00e5a0; --accent2: #0097ff;
+    --accent3: #ff5e5e; --accent4: #ffcc00;
+    --text: #e8ecf5; --muted: #6b7490; --radius: 16px;
+  }
+  body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; overflow: hidden; -webkit-app-region: drag; }
+  button, select, input { -webkit-app-region: no-drag; }
+
+  .sidebar { width: 220px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 48px 0 28px; flex-shrink: 0; }
+  .logo { padding: 0 24px 32px; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .nav-section { padding: 0 12px; margin-bottom: 8px; }
+  .nav-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; padding: 0 12px; margin-bottom: 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); transition: all 0.18s; position: relative; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(0,229,160,0.1); color: var(--accent); }
+  .nav-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 18px; background: var(--accent); border-radius: 2px; }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-footer { margin-top: auto; padding: 0 20px; }
+  .dry-run-toggle { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .dry-run-toggle span { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+  .toggle { position: relative; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 20px; cursor: pointer; transition: 0.2s; }
+  .toggle-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; }
+  .toggle input:checked + .toggle-slider { background: var(--accent3); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+  .dry-label { font-size: 10px; font-family: 'DM Mono', monospace; margin-bottom: 6px; color: var(--muted); }
+
+  .main { flex: 1; overflow-y: auto; padding: 36px 40px 100px; }
+  .main::-webkit-scrollbar { width: 4px; }
+  .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 36px; }
+  .header h1 { font-size: 32px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
+  .header h1 span { color: var(--accent); }
+  .header p { font-size: 13px; color: var(--muted); margin-top: 6px; font-family: 'DM Mono', monospace; }
+
+  .scan-btn { background: var(--accent); color: #0b0d11; border: none; border-radius: 12px; padding: 14px 28px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .scan-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,229,160,0.3); }
+  .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .disk-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; display: flex; align-items: center; gap: 32px; margin-bottom: 28px; transition: opacity 0.4s; }
+  .ring-wrap { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
+  .ring-svg { width: 120px; height: 120px; transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 10; }
+  .ring-fill { fill: none; stroke: url(#ringGrad); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1); }
+  .ring-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; }
+  .ring-label small { font-size: 11px; font-weight: 400; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .disk-info { flex: 1; }
+  .disk-info h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .disk-info p { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 18px; }
+  .disk-bar { display: flex; height: 8px; border-radius: 8px; overflow: hidden; gap: 2px; margin-bottom: 10px; background: var(--surface2); }
+  .disk-seg { border-radius: 8px; transition: width 1s ease; min-width: 0; }
+  .disk-legend { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-family: 'DM Mono', monospace; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .section-title { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 16px; margin-top: 32px; }
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+
+  .cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+  .cat-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .cat-card.selected { border-color: var(--accent); background: rgba(0,229,160,0.05); }
+  .cat-card.loading { opacity: 0.5; pointer-events: none; }
+  .cat-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .cat-icon { font-size: 24px; }
+  .cat-name { font-size: 15px; font-weight: 700; }
+  .cat-desc { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .cat-size { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .cat-count { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .cat-progress { height: 3px; background: var(--surface2); border-radius: 3px; margin-top: 14px; }
+  .cat-bar { height: 3px; border-radius: 3px; width: 0; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+  .checkbox { position: absolute; top: 16px; right: 16px; width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--border); background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.15s; }
+  .cat-card.selected .checkbox { background: var(--accent); border-color: var(--accent); color: #0b0d11; }
+
+  .action-bar { position: fixed; bottom: 0; left: 220px; right: 0; background: rgba(11,13,17,0.92); backdrop-filter: blur(16px); border-top: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; transform: translateY(100%); transition: transform 0.3s cubic-bezier(.4,0,.2,1); z-index: 100; }
+  .action-bar.visible { transform: translateY(0); }
+  .action-summary { font-family: 'DM Mono', monospace; }
+  .action-summary strong { font-size: 22px; font-weight: 700; color: var(--accent); }
+  .action-summary small { display: block; font-size: 12px; color: var(--muted); }
+  .dry-run-badge { display: inline-block; background: rgba(255,94,94,0.15); color: var(--accent3); font-size: 10px; font-family: 'DM Mono', monospace; padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
+  .action-btns { display: flex; gap: 12px; }
+  .btn-clean { background: var(--accent); color: #0b0d11; border: none; border-radius: 10px; padding: 12px 24px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-clean:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,229,160,0.3); }
+  .btn-deselect { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-deselect:hover { border-color: var(--muted); color: var(--text); }
+
+  .scan-overlay { display: none; position: fixed; inset: 0; background: rgba(11,13,17,0.85); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+  .scan-overlay.show { display: flex; }
+  .scan-spinner { width: 64px; height: 64px; border-radius: 50%; border: 3px solid var(--border); border-top-color: var(--accent); animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .scan-text { font-size: 20px; font-weight: 700; }
+  .scan-sub { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--muted); }
+  .scan-progress { width: 280px; height: 4px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .scan-fill { height: 4px; background: var(--accent); border-radius: 4px; width: 0; transition: width 0.4s; }
+
+  .result-overlay { display: none; position: fixed; inset: 0; background: rgba(11,13,17,0.95); z-index: 300; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+  .result-overlay.show { display: flex; }
+  .result-icon { font-size: 56px; animation: popIn 0.4s cubic-bezier(.4,0,.2,1) forwards; opacity: 0; }
+  @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .result-title { font-size: 26px; font-weight: 800; }
+  .result-saved { font-size: 44px; font-weight: 800; color: var(--accent); }
+  .result-sub { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--muted); }
+  .result-detail { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px; max-width: 400px; width: 100%; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); max-height: 180px; overflow-y: auto; }
+  .result-detail p { margin-bottom: 4px; }
+  .btn-done { background: var(--accent); color: #0b0d11; border: none; border-radius: 12px; padding: 13px 32px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: all 0.2s; }
+  .btn-done:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,229,160,0.3); }
+
+  .error-toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--accent3); color: white; padding: 12px 20px; border-radius: 10px; font-family: 'DM Mono', monospace; font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 400; pointer-events: none; }
+  .error-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="logo">Clean<span>OS</span></div>
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <div class="nav-item active"><span class="nav-icon">🧹</span><span>Smart Scan</span></div>
+    <div class="nav-item"><span class="nav-icon">💾</span><span>Disk Usage</span></div>
+    <div class="nav-item"><span class="nav-icon">🚀</span><span>Startup Apps</span></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Tools</div>
+    <div class="nav-item"><span class="nav-icon">🔐</span><span>Privacy</span></div>
+    <div class="nav-item"><span class="nav-icon">🗑️</span><span>Trash Bins</span></div>
+    <div class="nav-item"><span class="nav-icon">📦</span><span>Extensions</span></div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="dry-label">Clean Mode</div>
+    <div class="dry-run-toggle">
+      <span id="dryLabel">Dry Run ON</span>
+      <label class="toggle">
+        <input type="checkbox" id="dryRunToggle" checked onchange="updateDryLabel()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:8px;line-height:1.5">
+      Dry Run = preview only.<br>Toggle off to actually delete.
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="header">
+    <div>
+      <h1>Smart <span>Scan</span></h1>
+      <p id="lastScan">Never scanned — click to analyze your system</p>
+    </div>
+    <button class="scan-btn" id="scanBtn" onclick="startScan()">▶ Run Scan</button>
+  </div>
+
+  <div class="disk-card" id="diskCard" style="opacity:0.4">
+    <div class="ring-wrap">
+      <svg class="ring-svg" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#00e5a0"/>
+            <stop offset="100%" stop-color="#0097ff"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-bg" cx="50" cy="50" r="45"/>
+        <circle class="ring-fill" id="ringFill" cx="50" cy="50" r="45"/>
+      </svg>
+      <div class="ring-label"><span id="diskPct">—</span><small>used</small></div>
+    </div>
+    <div class="disk-info">
+      <h2>System Drive</h2>
+      <p id="diskSubtext">Run a scan to analyze disk usage</p>
+      <div class="disk-bar" id="diskBar">
+        <div class="disk-seg" id="segJunk" style="background:#ff5e5e;width:0%"></div>
+        <div class="disk-seg" id="segUsed" style="background:#0097ff;width:0%"></div>
+      </div>
+      <div class="disk-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#ff5e5e"></div>Junk Found</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#0097ff"></div>In Use</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#252a38;border:1px solid #444"></div>Free</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title" id="catTitle">Run a scan to find junk files</div>
+  <div class="cat-grid" id="catGrid"></div>
+</main>
+
+<div class="action-bar" id="actionBar">
+  <div class="action-summary">
+    <strong id="totalSize">0 B</strong>
+    <small id="selectedCount">0 categories selected
+      <span class="dry-run-badge" id="dryBadge">DRY RUN</span>
+    </small>
+  </div>
+  <div class="action-btns">
+    <button class="btn-deselect" onclick="deselectAll()">Deselect All</button>
+    <button class="btn-clean" id="cleanBtn" onclick="runClean()">🧹 Clean Now</button>
+  </div>
+</div>
+
+<div class="scan-overlay" id="scanOverlay">
+  <div class="scan-spinner"></div>
+  <div class="scan-text">Scanning System…</div>
+  <div class="scan-sub" id="scanSubText">Analyzing file system</div>
+  <div class="scan-progress"><div class="scan-fill" id="scanFill"></div></div>
+</div>
+
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-icon" id="resultIcon">✅</div>
+  <div class="result-title" id="resultTitle">Scan Complete</div>
+  <div class="result-saved" id="resultSaved">0 B</div>
+  <div class="result-sub" id="resultSub">would be freed</div>
+  <div class="result-detail" id="resultDetail"></div>
+  <button class="btn-done" onclick="dismissResult()">Done</button>
+</div>
+
+<div class="error-toast" id="errorToast"></div>
+
+<script>
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 ** 2) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 ** 3) return (bytes / 1024 ** 2).toFixed(2) + ' MB';
+  return (bytes / 1024 ** 3).toFixed(2) + ' GB';
+}
+
+function showError(msg) {
+  const t = document.getElementById('errorToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function isDryRun() {
+  return document.getElementById('dryRunToggle').checked;
+}
+
+function updateDryLabel() {
+  const on = isDryRun();
+  document.getElementById('dryLabel').textContent = on ? 'Dry Run ON' : 'Dry Run OFF';
+  document.getElementById('dryBadge').style.display = on ? '' : 'none';
+  const btn = document.getElementById('cleanBtn');
+  btn.textContent = on ? '🔍 Preview Clean' : '🧹 Clean Now';
+  btn.style.background = on ? 'var(--accent2)' : 'var(--accent)';
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const CATEGORY_META = {
+  cache:   { icon: '⚡', name: 'System Cache',    desc: 'Temp & app cache files', color: '#0097ff' },
+  logs:    { icon: '📋', name: 'Log Files',        desc: 'Crash & diagnostic logs', color: '#ffcc00' },
+  trash:   { icon: '🗑️', name: 'Trash',            desc: 'All system trash bins',   color: '#ff5e5e' },
+  browser: { icon: '🌍', name: 'Browser Data',     desc: 'Chrome, Firefox, Safari cache', color: '#00e5a0' },
+};
+
+let scanData = {};     // { cache: {sizeBytes, fileCount}, ... }
+let selected = new Set();
+let scanned  = false;
+
+// ── Scan ──────────────────────────────────────────────────────────────────────
+async function startScan() {
+  if (!window.cleanos) { showError('IPC bridge not found — are you running inside Electron?'); return; }
+
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Scanning…';
+  document.getElementById('scanOverlay').classList.add('show');
+
+  // Animate progress bar while waiting for real scan
+  let pct = 0;
+  const steps = ['Analyzing file system…','Scanning caches…','Checking logs…','Inspecting browser data…','Totalling results…'];
+  let stepIdx = 0;
+  const ticker = setInterval(() => {
+    pct = Math.min(pct + Math.random() * 15, 92);
+    document.getElementById('scanFill').style.width = pct + '%';
+    document.getElementById('scanSubText').textContent = steps[Math.min(stepIdx++, steps.length - 1)];
+  }, 400);
+
+  try {
+    scanData = await window.cleanos.scanAll();
+  } catch (err) {
+    clearInterval(ticker);
+    document.getElementById('scanOverlay').classList.remove('show');
+    btn.disabled = false;
+    btn.textContent = '▶ Run Scan';
+    showError('Scan failed: ' + err.message);
+    return;
+  }
+
+  clearInterval(ticker);
+  document.getElementById('scanFill').style.width = '100%';
+  await new Promise(r => setTimeout(r, 300));
+
+  document.getElementById('scanOverlay').classList.remove('show');
+  document.getElementById('scanFill').style.width = '0';
+  btn.disabled = false;
+  btn.textContent = '↺ Scan Again';
+
+  finishScan();
+}
+
+function finishScan() {
+  scanned = true;
+  const totalJunk = Object.values(scanData).reduce((s, v) => s + (v.sizeBytes || 0), 0);
+  const now = new Date().toLocaleTimeString();
+  document.getElementById('lastScan').textContent = `Last scan: ${now} — ${formatBytes(totalJunk)} junk found`;
+  document.getElementById('catTitle').textContent = `Found ${formatBytes(totalJunk)} to clean — select categories`;
+
+  // Disk ring — we don't have real df data here, show junk proportion symbolically
+  document.getElementById('diskCard').style.opacity = '1';
+  document.getElementById('diskPct').textContent = '~';
+  document.getElementById('diskSubtext').textContent = `${formatBytes(totalJunk)} of junk detected across 4 categories`;
+  setTimeout(() => {
+    document.getElementById('ringFill').style.strokeDashoffset = 180;
+    document.getElementById('segJunk').style.width = '18%';
+    document.getElementById('segUsed').style.width = '52%';
+  }, 100);
+
+  // Select all by default
+  selected = new Set(Object.keys(scanData));
+  renderCards();
+  updateActionBar();
+
+  setTimeout(() => {
+    document.querySelectorAll('.cat-bar').forEach(bar => {
+      bar.style.width = bar.dataset.pct + '%';
+    });
+    document.querySelectorAll('.cat-card').forEach(c => c.classList.add('selected'));
+    document.querySelectorAll('.checkbox').forEach(c => c.textContent = '✓');
+  }, 100);
+}
+
+// ── Render cards ──────────────────────────────────────────────────────────────
+function renderCards() {
+  const grid = document.getElementById('catGrid');
+  grid.innerHTML = '';
+  const maxBytes = Math.max(...Object.values(scanData).map(v => v.sizeBytes || 0), 1);
+
+  for (const [id, data] of Object.entries(scanData)) {
+    const meta = CATEGORY_META[id] || { icon: '📁', name: id, desc: '', color: '#888' };
+    const pct  = Math.round(((data.sizeBytes || 0) / maxBytes) * 100);
+    const card = document.createElement('div');
+    card.className = 'cat-card' + (selected.has(id) ? ' selected' : '');
+    card.dataset.id = id;
+    card.innerHTML = `
+      <div class="checkbox">${selected.has(id) ? '✓' : ''}</div>
+      <div class="cat-top">
+        <span class="cat-icon">${meta.icon}</span>
+        <div><div class="cat-name">${meta.name}</div><div class="cat-desc">${meta.desc}</div></div>
+      </div>
+      <div class="cat-size" style="color:${meta.color}">${formatBytes(data.sizeBytes || 0)}</div>
+      <div class="cat-count">${(data.fileCount || 0).toLocaleString()} files${data.error ? ' ⚠ ' + data.error : ''}</div>
+      <div class="cat-progress"><div class="cat-bar" style="background:${meta.color}" data-pct="${pct}"></div></div>
+    `;
+    card.onclick = () => toggleCard(card, id);
+    grid.appendChild(card);
+  }
+}
+
+function toggleCard(card, id) {
+  if (!scanned) return;
+  if (selected.has(id)) { selected.delete(id); card.classList.remove('selected'); card.querySelector('.checkbox').textContent = ''; }
+  else                  { selected.add(id);    card.classList.add('selected');    card.querySelector('.checkbox').textContent = '✓'; }
+  updateActionBar();
+}
+
+function deselectAll() {
+  selected.clear();
+  document.querySelectorAll('.cat-card').forEach(c => { c.classList.remove('selected'); c.querySelector('.checkbox').textContent = ''; });
+  updateActionBar();
+}
+
+function updateActionBar() {
+  const bar = document.getElementById('actionBar');
+  if (selected.size === 0) { bar.classList.remove('visible'); return; }
+  bar.classList.add('visible');
+  const total = [...selected].reduce((s, id) => s + (scanData[id]?.sizeBytes || 0), 0);
+  document.getElementById('totalSize').textContent = formatBytes(total);
+  document.getElementById('selectedCount').innerHTML =
+    `${selected.size} categor${selected.size === 1 ? 'y' : 'ies'} selected ` +
+    `<span class="dry-run-badge" id="dryBadge" style="display:${isDryRun()?'':'none'}">DRY RUN</span>`;
+}
+
+// ── Clean ─────────────────────────────────────────────────────────────────────
+async function runClean() {
+  if (!scanned || selected.size === 0) return;
+  if (!window.cleanos) { showError('IPC bridge not found'); return; }
+
+  const dry = isDryRun();
+  document.getElementById('cleanBtn').disabled = true;
+  document.getElementById('cleanBtn').textContent = dry ? '🔍 Previewing…' : '🧹 Cleaning…';
+
+  let results;
+  try {
+    results = await window.cleanos.clean([...selected], dry);
+  } catch (err) {
+    showError('Clean failed: ' + err.message);
+    document.getElementById('cleanBtn').disabled = false;
+    updateDryLabel();
+    return;
+  }
+
+  // Build result summary
+  let totalFreed = 0;
+  let totalDeleted = 0;
+  const lines = [];
+
+  for (const [id, r] of Object.entries(results)) {
+    const meta = CATEGORY_META[id] || { name: id };
+    if (dry) {
+      totalFreed   += r.wouldFreeBytes || 0;
+      totalDeleted += r.wouldDelete    || 0;
+      lines.push(`${meta.name}: ${formatBytes(r.wouldFreeBytes || 0)} across ${(r.wouldDelete||0).toLocaleString()} files`);
+    } else {
+      totalFreed   += r.freedBytes || 0;
+      totalDeleted += r.deleted    || 0;
+      const failNote = r.failed?.length ? ` (${r.failed.length} skipped)` : '';
+      lines.push(`${meta.name}: ${formatBytes(r.freedBytes || 0)} freed${failNote}`);
+    }
+    if (r.error) lines.push(`  ⚠ ${r.error}`);
+  }
+
+  const overlay   = document.getElementById('resultOverlay');
+  document.getElementById('resultIcon').textContent  = dry ? '🔍' : '✅';
+  document.getElementById('resultTitle').textContent = dry ? 'Preview — Dry Run' : 'All Clean!';
+  document.getElementById('resultSaved').textContent = formatBytes(totalFreed);
+  document.getElementById('resultSub').textContent   = dry
+    ? `would be freed from ${totalDeleted.toLocaleString()} files (nothing deleted)`
+    : `freed from ${totalDeleted.toLocaleString()} files`;
+  document.getElementById('resultDetail').innerHTML  = lines.map(l => `<p>${l}</p>`).join('');
+  overlay.classList.add('show');
+
+  document.getElementById('cleanBtn').disabled = false;
+  updateDryLabel();
+}
+
+function dismissResult() {
+  document.getElementById('resultOverlay').classList.remove('show');
+  // Re-render cards with fresh scan to reflect cleaned state
+  if (!isDryRun()) startScan();
+}
+
+// Init dry label
+updateDryLabel();
+</script>
+</body>
+</html>
