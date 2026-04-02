@@ -10,12 +10,27 @@
 //   - Skip anything we can't read
 
 const path = require('path');
+const fs   = require('fs');
 const { walkDir, totalSize, deleteFiles, dirExists, HOME } = require('./utils');
 
 const CACHE_DIRS = [
   `${HOME}/Library/Caches`,
   '/Library/Caches',
 ];
+
+// App sandboxed container caches — same content as ~/Library/Caches but
+// stored per-container for apps distributed via the Mac App Store
+function containerCacheDirs() {
+  const containersRoot = `${HOME}/Library/Containers`;
+  if (!dirExists(containersRoot)) return [];
+  try {
+    return fs.readdirSync(containersRoot)
+      .map(c => path.join(containersRoot, c, 'Data', 'Library', 'Caches'))
+      .filter(dirExists);
+  } catch {
+    return [];
+  }
+}
 
 // Subdirectories inside ~/Library/Caches to skip
 // (browser caches are handled by browser.js, system internals left alone)
@@ -34,8 +49,9 @@ function shouldSkip(filePath) {
 
 async function scan() {
   const files = [];
+  const allDirs = [...CACHE_DIRS, ...containerCacheDirs()];
 
-  for (const dir of CACHE_DIRS) {
+  for (const dir of allDirs) {
     if (!dirExists(dir)) continue;
     const found = walkDir(dir);
     files.push(...found.filter(f => !shouldSkip(f)));

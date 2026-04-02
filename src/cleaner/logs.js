@@ -17,7 +17,9 @@ const { walkDir, totalSize, deleteFiles, dirExists, HOME } = require('./utils');
 
 const LOG_DIRS = [
   `${HOME}/Library/Logs`,
+  `${HOME}/Library/Logs/DiagnosticReports`,  // crash reports, hang logs
   '/Library/Logs',
+  '/Library/Logs/DiagnosticReports',
   '/var/log',
 ];
 

@@ -21,14 +21,12 @@ const BROWSERS = [
   {
     name: 'Chrome',
     cacheDirs: [
-      `${HOME}/Library/Application Support/Google/Chrome/Default/Cache`,
-      `${HOME}/Library/Application Support/Google/Chrome/Default/Code Cache`,
+      ...chromiumProfileCacheDirs('Google/Chrome'),
       `${HOME}/Library/Application Support/Google/Chrome/Default/GPUCache`,
     ],
   },
   {
     name: 'Firefox',
-    // Firefox uses a hashed profile dir; glob the Profiles folder
     cacheDirs: firefoxCacheDirs(),
   },
   {
@@ -40,19 +38,45 @@ const BROWSERS = [
   },
   {
     name: 'Brave',
-    cacheDirs: [
-      `${HOME}/Library/Application Support/BraveSoftware/Brave-Browser/Default/Cache`,
-      `${HOME}/Library/Application Support/BraveSoftware/Brave-Browser/Default/Code Cache`,
-    ],
+    cacheDirs: chromiumProfileCacheDirs('BraveSoftware/Brave-Browser'),
   },
   {
     name: 'Edge',
-    cacheDirs: [
-      `${HOME}/Library/Application Support/Microsoft Edge/Default/Cache`,
-      `${HOME}/Library/Application Support/Microsoft Edge/Default/Code Cache`,
-    ],
+    cacheDirs: chromiumProfileCacheDirs('Microsoft Edge'),
+  },
+  {
+    name: 'Arc',
+    cacheDirs: chromiumProfileCacheDirs('Arc/User Data'),
+  },
+  {
+    name: 'Opera',
+    cacheDirs: chromiumProfileCacheDirs('com.operasoftware.Opera'),
+  },
+  {
+    name: 'Vivaldi',
+    cacheDirs: chromiumProfileCacheDirs('Vivaldi'),
   },
 ];
+
+// Chromium-based browsers store caches under Default/ and any numbered Profile N/
+// This picks up all profiles rather than only Default
+function chromiumProfileCacheDirs(appDir) {
+  const base = `${HOME}/Library/Application Support/${appDir}`;
+  if (!dirExists(base)) return [];
+  const fs = require('fs');
+  const dirs = [];
+  try {
+    const profiles = fs.readdirSync(base).filter(d => d === 'Default' || /^Profile \d+$/.test(d));
+    for (const p of profiles) {
+      dirs.push(
+        `${base}/${p}/Cache`,
+        `${base}/${p}/Code Cache`,
+        `${base}/${p}/GPUCache`,
+      );
+    }
+  } catch { /* no access */ }
+  return dirs.filter(dirExists);
+}
 
 function firefoxCacheDirs() {
   const profilesRoot = `${HOME}/Library/Application Support/Firefox/Profiles`;

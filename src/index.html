@@ -14,7 +14,7 @@
     --text: #e8ecf5; --muted: #6b7490; --radius: 16px;
   }
   body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; overflow: hidden; -webkit-app-region: drag; }
-  button, select, input { -webkit-app-region: no-drag; }
+  button, select, input, label { -webkit-app-region: no-drag; }
 
   .sidebar { width: 220px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 48px 0 28px; flex-shrink: 0; }
   .logo { padding: 0 24px 32px; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
@@ -249,21 +249,26 @@ function isDryRun() {
 function updateDryLabel() {
   const on = isDryRun();
   document.getElementById('dryLabel').textContent = on ? 'Dry Run ON' : 'Dry Run OFF';
-  document.getElementById('dryBadge').style.display = on ? '' : 'none';
+  document.querySelectorAll('.dry-run-badge').forEach(el => el.style.display = on ? '' : 'none');
   const btn = document.getElementById('cleanBtn');
+  if (!btn) return;
   btn.textContent = on ? '🔍 Preview Clean' : '🧹 Clean Now';
   btn.style.background = on ? 'var(--accent2)' : 'var(--accent)';
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const CATEGORY_META = {
-  cache:   { icon: '⚡', name: 'System Cache',    desc: 'Temp & app cache files', color: '#0097ff' },
-  logs:    { icon: '📋', name: 'Log Files',        desc: 'Crash & diagnostic logs', color: '#ffcc00' },
-  trash:   { icon: '🗑️', name: 'Trash',            desc: 'All system trash bins',   color: '#ff5e5e' },
-  browser: { icon: '🌍', name: 'Browser Data',     desc: 'Chrome, Firefox, Safari cache', color: '#00e5a0' },
+  cache:     { icon: '⚡', name: 'System Cache',    desc: 'App & container cache files',       color: '#0097ff' },
+  logs:      { icon: '📋', name: 'Log Files',        desc: 'Crash reports & diagnostic logs',   color: '#ffcc00' },
+  trash:     { icon: '🗑️', name: 'Trash',            desc: 'All system trash bins',              color: '#ff5e5e' },
+  browser:   { icon: '🌍', name: 'Browser Data',     desc: 'Chrome, Firefox, Safari & more',    color: '#00e5a0' },
+  developer: { icon: '🛠️', name: 'Developer Tools',  desc: 'Xcode, npm, Homebrew, pip caches',       color: '#bf5af2' },
+  downloads: { icon: '📥', name: 'Large Downloads',  desc: 'Files >50 MB older than 30 days',        color: '#ff9f0a' },
+  system:    { icon: '🖥️', name: 'System Data',      desc: 'Temp files & Time Machine snapshots',   color: '#ff6b6b' },
 };
 
 let scanData = {};     // { cache: {sizeBytes, fileCount}, ... }
+let diskData = {};     // { total, used, available } in bytes
 let selected = new Set();
 let scanned  = false;
 
@@ -287,7 +292,10 @@ async function startScan() {
   }, 400);
 
   try {
-    scanData = await window.cleanos.scanAll();
+    [scanData, diskData] = await Promise.all([
+      window.cleanos.scanAll(),
+      window.cleanos.diskInfo(),
+    ]);
   } catch (err) {
     clearInterval(ticker);
     document.getElementById('scanOverlay').classList.remove('show');
@@ -316,14 +324,20 @@ function finishScan() {
   document.getElementById('lastScan').textContent = `Last scan: ${now} — ${formatBytes(totalJunk)} junk found`;
   document.getElementById('catTitle').textContent = `Found ${formatBytes(totalJunk)} to clean — select categories`;
 
-  // Disk ring — we don't have real df data here, show junk proportion symbolically
+  // Disk ring — real df data
   document.getElementById('diskCard').style.opacity = '1';
-  document.getElementById('diskPct').textContent = '~';
-  document.getElementById('diskSubtext').textContent = `${formatBytes(totalJunk)} of junk detected across 4 categories`;
+  const usedPct  = diskData.total ? Math.round((diskData.used  / diskData.total) * 100) : 0;
+  const junkPct  = diskData.total ? Math.round((totalJunk      / diskData.total) * 100) : 0;
+  const cleanPct = Math.max(0, usedPct - junkPct);
+  document.getElementById('diskPct').textContent = usedPct + '%';
+  document.getElementById('diskSubtext').textContent = diskData.total
+    ? `${formatBytes(diskData.used)} used of ${formatBytes(diskData.total)} — ${formatBytes(diskData.available)} free`
+    : `${formatBytes(totalJunk)} of junk detected`;
   setTimeout(() => {
-    document.getElementById('ringFill').style.strokeDashoffset = 180;
-    document.getElementById('segJunk').style.width = '18%';
-    document.getElementById('segUsed').style.width = '52%';
+    // Ring tracks total used %: circumference = 283, offset = 283 * (1 - usedPct/100)
+    document.getElementById('ringFill').style.strokeDashoffset = 283 * (1 - usedPct / 100);
+    document.getElementById('segJunk').style.width  = junkPct  + '%';
+    document.getElementById('segUsed').style.width  = cleanPct + '%';
   }, 100);
 
   // Select all by default
@@ -386,9 +400,9 @@ function updateActionBar() {
   bar.classList.add('visible');
   const total = [...selected].reduce((s, id) => s + (scanData[id]?.sizeBytes || 0), 0);
   document.getElementById('totalSize').textContent = formatBytes(total);
-  document.getElementById('selectedCount').innerHTML =
-    `${selected.size} categor${selected.size === 1 ? 'y' : 'ies'} selected ` +
-    `<span class="dry-run-badge" id="dryBadge" style="display:${isDryRun()?'':'none'}">DRY RUN</span>`;
+  document.getElementById('selectedCount').textContent =
+    `${selected.size} categor${selected.size === 1 ? 'y' : 'ies'} selected `;
+  updateDryLabel();
 }
 
 // ── Clean ─────────────────────────────────────────────────────────────────────

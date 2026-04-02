@@ -12,8 +12,6 @@
 //   - Never delete the .Trash directory itself, only its contents
 
 const fs      = require('fs');
-const path    = require('path');
-const os      = require('os');
 const { execSync } = require('child_process');
 const { walkDir, totalSize, deleteFiles, dirExists, HOME } = require('./utils');
 
@@ -66,6 +64,7 @@ async function clean({ dryRun = true } = {}) {
   try {
     execSync(`osascript -e 'tell application "Finder" to empty trash'`, {
       timeout: 30000,
+      stdio: 'pipe',  // suppress osascript stderr — fallback handles the failure
     });
     return { dryRun: false, deleted: fileCount, freedBytes: sizeBytes, failed: [], method: 'osascript' };
   } catch {
