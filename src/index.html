@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'">
 <title>CleanOS</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -12,13 +13,16 @@
     --border: #252a38; --accent: #00e5a0; --accent2: #0097ff;
     --accent3: #ff5e5e; --accent4: #ffcc00;
     --text: #e8ecf5; --muted: #6b7490; --radius: 16px;
+    --sidebar-width: 220px; --sidebar-drawer-width: 280px;
   }
   body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; overflow: hidden; -webkit-app-region: drag; }
   button, select, input, label { -webkit-app-region: no-drag; }
 
-  .sidebar { width: 220px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 48px 0 28px; flex-shrink: 0; }
+  .nav-backdrop { display: none; }
+  .sidebar { width: var(--sidebar-width); min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 48px 0 28px; flex-shrink: 0; transition: transform 0.25s cubic-bezier(.4,0,.2,1); }
   .logo { padding: 0 24px 32px; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
   .logo span { color: var(--accent); }
+  .header-tools { display: flex; align-items: flex-start; gap: 12px; }
   .nav-section { padding: 0 12px; margin-bottom: 8px; }
   .nav-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; padding: 0 12px; margin-bottom: 6px; }
   .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); transition: all 0.18s; position: relative; }
@@ -38,9 +42,54 @@
   .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
   .dry-label { font-size: 10px; font-family: 'DM Mono', monospace; margin-bottom: 6px; color: var(--muted); }
 
-  .main { flex: 1; overflow-y: auto; padding: 36px 40px 100px; }
-  .main::-webkit-scrollbar { width: 4px; }
-  .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .main {
+    flex: 1;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) var(--surface);
+    padding: 36px 40px 100px;
+  }
+  .main::-webkit-scrollbar { width: 10px; }
+  .main::-webkit-scrollbar-track { background: var(--surface); }
+  .main::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--border), #323a4f);
+    border-radius: 999px;
+    border: 2px solid var(--surface);
+  }
+
+  .result-detail,
+  .trash-preview {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) var(--surface);
+  }
+  .result-detail::-webkit-scrollbar,
+  .trash-preview::-webkit-scrollbar { width: 8px; }
+  .result-detail::-webkit-scrollbar-track,
+  .trash-preview::-webkit-scrollbar-track { background: var(--surface); }
+  .result-detail::-webkit-scrollbar-thumb,
+  .trash-preview::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 999px;
+    border: 2px solid var(--surface);
+  }
+
+  .nav-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
   .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 36px; }
   .header h1 { font-size: 32px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
@@ -68,12 +117,14 @@
   .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 
   .section-title { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 16px; margin-top: 32px; }
-  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 14px; }
 
   .cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
   .cat-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
   .cat-card.selected { border-color: var(--accent); background: rgba(0,229,160,0.05); }
   .cat-card.loading { opacity: 0.5; pointer-events: none; }
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: default; transition: all 0.2s; position: relative; overflow: hidden; }
+  .summary-card:hover { border-color: var(--border); transform: none; box-shadow: none; }
   .cat-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
   .cat-icon { font-size: 24px; }
   .cat-name { font-size: 15px; font-weight: 700; }
@@ -85,7 +136,7 @@
   .checkbox { position: absolute; top: 16px; right: 16px; width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--border); background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.15s; }
   .cat-card.selected .checkbox { background: var(--accent); border-color: var(--accent); color: #0b0d11; }
 
-  .action-bar { position: fixed; bottom: 0; left: 220px; right: 0; background: rgba(11,13,17,0.92); backdrop-filter: blur(16px); border-top: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; transform: translateY(100%); transition: transform 0.3s cubic-bezier(.4,0,.2,1); z-index: 100; }
+  .action-bar { position: fixed; bottom: 0; left: var(--sidebar-width); right: 0; background: rgba(11,13,17,0.92); backdrop-filter: blur(16px); border-top: 1px solid var(--border); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; transform: translateY(100%); transition: transform 0.3s cubic-bezier(.4,0,.2,1); z-index: 100; }
   .action-bar.visible { transform: translateY(0); }
   .action-summary { font-family: 'DM Mono', monospace; }
   .action-summary strong { font-size: 22px; font-weight: 700; color: var(--accent); }
@@ -94,6 +145,8 @@
   .action-btns { display: flex; gap: 12px; }
   .btn-clean { background: var(--accent); color: #0b0d11; border: none; border-radius: 10px; padding: 12px 24px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
   .btn-clean:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,229,160,0.3); }
+  .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
   .btn-deselect { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
   .btn-deselect:hover { border-color: var(--muted); color: var(--text); }
 
@@ -122,7 +175,7 @@
   .error-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   /* ── Maintenance view ────────────────────────────────────────────────────── */
-  .maint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .maint-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 14px; }
   .maint-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.2s, box-shadow 0.2s; }
   .maint-card:hover { border-color: var(--accent2); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
   .maint-top { display: flex; align-items: flex-start; gap: 14px; }
@@ -143,9 +196,7 @@
 
   /* ── Trash view ──────────────────────────────────────────────────────────── */
   .trash-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .trash-summary .cat-card { cursor: default; }
-  .trash-summary .cat-card:hover { border-color: var(--border); transform: none; box-shadow: none; }
-  .trash-summary .cat-size { color: var(--accent); }
+  .trash-summary .summary-card .cat-size { color: var(--accent); }
   .trash-preview {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -165,39 +216,75 @@
     .disk-card { gap: 20px; }
     .ring-wrap { width: 104px; height: 104px; }
     .ring-svg { width: 104px; height: 104px; }
-    .cat-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    .cat-grid { grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); }
+    .maint-grid { grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); }
   }
 
   @media (max-width: 900px) {
-    body { flex-direction: column; overflow: auto; }
-    .sidebar { width: 100%; min-height: auto; padding: 18px 18px 14px; border-right: none; border-bottom: 1px solid var(--border); }
-    .logo { padding: 0 6px 12px; }
-    .nav-section { padding: 0; margin-bottom: 4px; }
-    .nav-label { padding: 0 6px; }
-    .nav-item { padding: 8px 10px; }
-    .sidebar-footer { display: none; }
-    .main { padding: 22px 20px 110px; }
+    body { overflow: auto; }
+    .nav-toggle { display: inline-flex; }
+    .nav-backdrop {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: rgba(11,13,17,0.58);
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      z-index: 180;
+    }
+    .nav-backdrop.show { opacity: 1; pointer-events: auto; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: min(var(--sidebar-drawer-width), 84vw);
+      min-height: 100vh;
+      padding: 22px 0 18px;
+      border-right: 1px solid var(--border);
+      border-bottom: none;
+      transform: translateX(-102%);
+      z-index: 200;
+      box-shadow: 24px 0 48px rgba(0,0,0,0.35);
+    }
+    body.nav-open .sidebar { transform: translateX(0); }
+    .logo { padding: 0 20px 18px; }
+    .nav-section { padding: 0 8px; margin-bottom: 4px; }
+    .nav-label { padding: 0 12px; }
+    .nav-item { padding: 10px 12px; }
+    .sidebar-footer { display: block; padding: 0 16px; }
+    .main { padding: 18px 16px 104px; }
     .header { flex-direction: column; gap: 14px; }
+    .header-tools { width: 100%; justify-content: space-between; }
     .scan-btn { width: 100%; justify-content: center; }
-    .disk-card { flex-direction: column; align-items: flex-start; }
+    .disk-card { flex-direction: column; align-items: flex-start; padding: 22px; }
     .ring-wrap { align-self: center; }
-    .action-bar { left: 0; padding: 16px 20px; flex-direction: column; align-items: flex-start; gap: 12px; }
+    .action-bar { left: 0; right: 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); flex-direction: column; align-items: flex-start; gap: 12px; }
+    .action-summary { width: 100%; }
     .action-btns { width: 100%; }
     .btn-clean, .btn-deselect { flex: 1; }
+    .perm-banner { flex-direction: column; align-items: flex-start; }
+    .perm-banner .btn-perm { align-self: stretch; }
   }
 
   @media (max-width: 640px) {
+    .sidebar { width: min(86vw, 300px); }
+    .logo { font-size: 18px; }
+    .nav-item { font-size: 13px; }
     .header h1 { font-size: 26px; }
     .header p { font-size: 12px; }
     .disk-info h2 { font-size: 16px; }
     .disk-info p { font-size: 12px; }
-    .cat-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .cat-grid { grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); }
     .cat-card { padding: 16px; }
     .cat-name { font-size: 14px; }
     .cat-size { font-size: 20px; }
-    .maint-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+    .maint-grid { grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
+    .result-overlay { padding: 20px; }
+    .result-detail { max-height: 36vh; }
     .result-saved { font-size: 36px; }
     .result-title { font-size: 22px; }
+    .scan-progress { width: min(100%, 240px); }
   }
 
   /* ── Permission banner ───────────────────────────────────────────────────── */
@@ -212,6 +299,8 @@
 </style>
 </head>
 <body>
+
+<div class="nav-backdrop" id="navBackdrop" onclick="closeNavDrawer()"></div>
 
 <nav class="sidebar">
   <div class="logo">Clean<span>OS</span></div>
@@ -245,9 +334,12 @@
 
 <main class="main" id="viewScan">
   <div class="header">
-    <div>
+    <div class="header-tools">
+      <button class="nav-toggle" id="navToggle" aria-label="Open navigation" aria-expanded="false" onclick="toggleNavDrawer()">☰</button>
+      <div>
       <h1>Smart <span>Scan</span></h1>
       <p id="lastScan">Never scanned — click to analyze your system</p>
+      </div>
     </div>
     <button class="scan-btn" id="scanBtn" onclick="startScan()">▶ Run Scan</button>
   </div>
@@ -296,9 +388,12 @@
 
 <main class="main" id="viewMaintenance" style="display:none">
   <div class="header">
-    <div>
+    <div class="header-tools">
+      <button class="nav-toggle" id="navToggleMaintenance" aria-label="Open navigation" aria-expanded="false" onclick="toggleNavDrawer()">☰</button>
+      <div>
       <h1>System <span>Maintenance</span></h1>
       <p>Automated tasks to tune performance and fix common macOS issues</p>
+      </div>
     </div>
   </div>
   <div class="section-title">Available Tasks</div>
@@ -309,47 +404,59 @@
 
 <main class="main" id="viewDiskUsage" style="display:none">
   <div class="header">
-    <div>
+    <div class="header-tools">
+      <button class="nav-toggle" id="navToggleDiskUsage" aria-label="Open navigation" aria-expanded="false" onclick="toggleNavDrawer()">☰</button>
+      <div>
       <h1>Disk <span>Usage</span></h1>
       <p>Detailed disk usage insights are coming soon.</p>
+      </div>
     </div>
   </div>
 </main>
 
 <main class="main" id="viewStartupApps" style="display:none">
   <div class="header">
-    <div>
+    <div class="header-tools">
+      <button class="nav-toggle" id="navToggleStartupApps" aria-label="Open navigation" aria-expanded="false" onclick="toggleNavDrawer()">☰</button>
+      <div>
       <h1>Startup <span>Apps</span></h1>
       <p>Startup app management is coming soon.</p>
+      </div>
     </div>
   </div>
 </main>
 
 <main class="main" id="viewPrivacy" style="display:none">
   <div class="header">
-    <div>
+    <div class="header-tools">
+      <button class="nav-toggle" id="navTogglePrivacy" aria-label="Open navigation" aria-expanded="false" onclick="toggleNavDrawer()">☰</button>
+      <div>
       <h1>Privacy <span>Tools</span></h1>
       <p>Privacy cleanup and controls are coming soon.</p>
+      </div>
     </div>
   </div>
 </main>
 
 <main class="main" id="viewTrashBins" style="display:none">
   <div class="header">
-    <div>
+    <div class="header-tools">
+      <button class="nav-toggle" id="navToggleTrashBins" aria-label="Open navigation" aria-expanded="false" onclick="toggleNavDrawer()">☰</button>
+      <div>
       <h1>Trash <span>Bins</span></h1>
       <p>Scan trash across your user and mounted volumes, preview deletions, then empty safely.</p>
+      </div>
     </div>
     <div class="trash-actions">
-      <button class="btn-deselect" id="trashScanBtn" onclick="scanTrashBins()">Scan Trash</button>
-      <button class="btn-deselect" id="trashPreviewBtn" onclick="previewTrashBins()">Preview Delete</button>
+      <button class="btn-secondary" id="trashScanBtn" onclick="scanTrashBins()">Scan Trash</button>
+      <button class="btn-secondary" id="trashPreviewBtn" onclick="previewTrashBins()">Preview Delete</button>
       <button class="btn-clean" id="trashCleanBtn" onclick="emptyTrashBins()">Empty Trash</button>
     </div>
   </div>
 
   <div class="section-title">Trash Overview</div>
   <div class="cat-grid trash-summary">
-    <div class="cat-card">
+    <div class="summary-card">
       <div class="cat-top">
         <span class="cat-icon">🗑️</span>
         <div>
@@ -360,7 +467,7 @@
       <div class="cat-size" id="trashSizeValue">0 B</div>
     </div>
 
-    <div class="cat-card">
+    <div class="summary-card">
       <div class="cat-top">
         <span class="cat-icon">📄</span>
         <div>
@@ -371,7 +478,7 @@
       <div class="cat-size" id="trashCountValue">0</div>
     </div>
 
-    <div class="cat-card">
+    <div class="summary-card">
       <div class="cat-top">
         <span class="cat-icon">ℹ️</span>
         <div>
@@ -391,9 +498,12 @@
 
 <main class="main" id="viewExtensions" style="display:none">
   <div class="header">
-    <div>
+    <div class="header-tools">
+      <button class="nav-toggle" id="navToggleExtensions" aria-label="Open navigation" aria-expanded="false" onclick="toggleNavDrawer()">☰</button>
+      <div>
       <h1>Extensions <span>Manager</span></h1>
       <p>Extension cleanup and management are coming soon.</p>
+      </div>
     </div>
   </div>
 </main>
@@ -431,9 +541,50 @@
 
 <script>
 // ── Helpers ───────────────────────────────────────────────────────────────────
+const navBackdrop = document.getElementById('navBackdrop');
+const navToggleButtons = Array.from(document.querySelectorAll('.nav-toggle'));
+const mobileNavQuery = window.matchMedia('(max-width: 900px)');
+
+function syncNavToggleState() {
+  const open = document.body.classList.contains('nav-open');
+  navToggleButtons.forEach((button) => {
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    button.textContent = open ? '✕' : '☰';
+  });
+  if (navBackdrop) navBackdrop.classList.toggle('show', open && mobileNavQuery.matches);
+}
+
+function openNavDrawer() {
+  if (!mobileNavQuery.matches) return;
+  document.body.classList.add('nav-open');
+  syncNavToggleState();
+}
+
+function closeNavDrawer() {
+  document.body.classList.remove('nav-open');
+  syncNavToggleState();
+}
+
+function toggleNavDrawer() {
+  if (document.body.classList.contains('nav-open')) closeNavDrawer();
+  else openNavDrawer();
+}
+
+function handleNavViewportChange() {
+  if (!mobileNavQuery.matches) {
+    closeNavDrawer();
+    return;
+  }
+  syncNavToggleState();
+}
+
+mobileNavQuery.addEventListener('change', handleNavViewportChange);
+handleNavViewportChange();
+
 // ── Permissions ───────────────────────────────────────────────────────────────
 async function checkPermissions() {
   if (!window.cleanos) return;
+  if (typeof window.cleanos.checkPermissions !== 'function') return;
   const { granted } = await window.cleanos.checkPermissions();
   document.getElementById('permBanner').classList.toggle('show', !granted);
 }
@@ -513,9 +664,12 @@ async function startScan() {
   }, 400);
 
   try {
+    const diskInfo = typeof window.cleanos.diskInfo === 'function'
+      ? window.cleanos.diskInfo()
+      : Promise.resolve({});
     [scanData, diskData] = await Promise.all([
       window.cleanos.scanAll(),
-      window.cleanos.diskInfo(),
+      diskInfo,
     ]);
   } catch (err) {
     clearInterval(ticker);
@@ -727,8 +881,8 @@ function updateActionBar() {
   bar.classList.add('visible');
   const total = [...selected].reduce((s, id) => s + (scanData[id]?.sizeBytes || 0), 0);
   document.getElementById('totalSize').textContent = formatBytes(total);
-  document.getElementById('selectedCount').textContent =
-    `${selected.size} categor${selected.size === 1 ? 'y' : 'ies'} selected `;
+  const selectedCount = document.getElementById('selectedCount');
+  selectedCount.innerHTML = `${selected.size} categor${selected.size === 1 ? 'y' : 'ies'} selected <span class="dry-run-badge" id="dryBadge">DRY RUN</span>`;
   updateDryLabel();
 }
 
@@ -821,6 +975,8 @@ function showView(name) {
     const panel = document.getElementById(panelId);
     if (panel) panel.style.display = key === name ? '' : 'none';
   });
+
+  if (mobileNavQuery.matches) closeNavDrawer();
 
   // Update sidebar active state
   Object.entries(VIEWS).forEach(([key, navId]) => {

@@ -39,10 +39,10 @@ function runWorkerTask(payload) {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1100,
-    height: 720,
-    minWidth: 800,
-    minHeight: 600,
+    width: 1280,
+    height: 820,
+    minWidth: 760,
+    minHeight: 580,
     titleBarStyle: 'hiddenInset',   // native macOS traffic lights
     backgroundColor: '#0b0d11',
     webPreferences: {
