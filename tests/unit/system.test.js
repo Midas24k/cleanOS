@@ -22,7 +22,7 @@ beforeEach(() => {
   dirExists.mockReturnValue(false);
   walkDir.mockReturnValue([]);
   totalSize.mockReturnValue(0);
-  deleteFiles.mockReturnValue({ deleted: 0, failed: [] });
+  deleteFiles.mockReturnValue({ deleted: 0, deletedBytes: 0, failed: [] });
   childProcess.execSync.mockReturnValue('');
   jest.spyOn(fs, 'readdirSync').mockReturnValue([]);
   jest.spyOn(os, 'tmpdir').mockReturnValue('/private/var/folders/xx/tmp/T');
@@ -146,7 +146,7 @@ describe('clean', () => {
     jest.spyOn(fs, 'statSync').mockReturnValue({ mtimeMs: THREE_DAYS_AGO, isDirectory: () => false, isFile: () => true });
     walkDir.mockReturnValue([]);
     totalSize.mockReturnValue(2048);
-    deleteFiles.mockReturnValue({ deleted: 1, failed: [] });
+    deleteFiles.mockReturnValue({ deleted: 1, deletedBytes: 2048, failed: [] });
 
     const result = await system.clean({ dryRun: false });
 

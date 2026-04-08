@@ -199,15 +199,15 @@
   <div class="nav-section">
     <div class="nav-label">Main</div>
     <div class="nav-item active" id="navScan" onclick="showView('scan')"><span class="nav-icon">🧹</span><span>Smart Scan</span></div>
-    <div class="nav-item"><span class="nav-icon">💾</span><span>Disk Usage</span></div>
-    <div class="nav-item"><span class="nav-icon">🚀</span><span>Startup Apps</span></div>
+    <div class="nav-item" id="navDiskUsage" onclick="showView('diskUsage')"><span class="nav-icon">💾</span><span>Disk Usage</span></div>
+    <div class="nav-item" id="navStartupApps" onclick="showView('startupApps')"><span class="nav-icon">🚀</span><span>Startup Apps</span></div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Tools</div>
     <div class="nav-item" id="navMaintenance" onclick="showView('maintenance')"><span class="nav-icon">🔧</span><span>Maintenance</span></div>
-    <div class="nav-item"><span class="nav-icon">🔐</span><span>Privacy</span></div>
-    <div class="nav-item"><span class="nav-icon">🗑️</span><span>Trash Bins</span></div>
-    <div class="nav-item"><span class="nav-icon">📦</span><span>Extensions</span></div>
+    <div class="nav-item" id="navPrivacy" onclick="showView('privacy')"><span class="nav-icon">🔐</span><span>Privacy</span></div>
+    <div class="nav-item" id="navTrashBins" onclick="showView('trashBins')"><span class="nav-icon">🗑️</span><span>Trash Bins</span></div>
+    <div class="nav-item" id="navExtensions" onclick="showView('extensions')"><span class="nav-icon">📦</span><span>Extensions</span></div>
   </div>
   <div class="sidebar-footer">
     <div class="dry-label">Clean Mode</div>
@@ -285,6 +285,51 @@
   <div class="section-title">Available Tasks</div>
   <div class="maint-grid" id="maintGrid">
     <div style="color:var(--muted);font-family:'DM Mono',monospace;font-size:13px">Loading tasks…</div>
+  </div>
+</main>
+
+<main class="main" id="viewDiskUsage" style="display:none">
+  <div class="header">
+    <div>
+      <h1>Disk <span>Usage</span></h1>
+      <p>Detailed disk usage insights are coming soon.</p>
+    </div>
+  </div>
+</main>
+
+<main class="main" id="viewStartupApps" style="display:none">
+  <div class="header">
+    <div>
+      <h1>Startup <span>Apps</span></h1>
+      <p>Startup app management is coming soon.</p>
+    </div>
+  </div>
+</main>
+
+<main class="main" id="viewPrivacy" style="display:none">
+  <div class="header">
+    <div>
+      <h1>Privacy <span>Tools</span></h1>
+      <p>Privacy cleanup and controls are coming soon.</p>
+    </div>
+  </div>
+</main>
+
+<main class="main" id="viewTrashBins" style="display:none">
+  <div class="header">
+    <div>
+      <h1>Trash <span>Bins</span></h1>
+      <p>Advanced trash bin controls are coming soon.</p>
+    </div>
+  </div>
+</main>
+
+<main class="main" id="viewExtensions" style="display:none">
+  <div class="header">
+    <div>
+      <h1>Extensions <span>Manager</span></h1>
+      <p>Extension cleanup and management are coming soon.</p>
+    </div>
   </div>
 </main>
 
@@ -459,8 +504,6 @@ function finishScan() {
     document.querySelectorAll('.cat-bar').forEach(bar => {
       bar.style.width = bar.dataset.pct + '%';
     });
-    document.querySelectorAll('.cat-card').forEach(c => c.classList.add('selected'));
-    document.querySelectorAll('.checkbox').forEach(c => c.textContent = '✓');
   }, 100);
 }
 
@@ -578,18 +621,42 @@ function dismissResult() {
 updateDryLabel();
 
 // ── View switching ────────────────────────────────────────────────────────────
-const VIEWS = { scan: 'navScan', maintenance: 'navMaintenance' };
+const VIEWS = {
+  scan: 'navScan',
+  diskUsage: 'navDiskUsage',
+  startupApps: 'navStartupApps',
+  maintenance: 'navMaintenance',
+  privacy: 'navPrivacy',
+  trashBins: 'navTrashBins',
+  extensions: 'navExtensions',
+};
+
+const VIEW_PANELS = {
+  scan: 'viewScan',
+  diskUsage: 'viewDiskUsage',
+  startupApps: 'viewStartupApps',
+  maintenance: 'viewMaintenance',
+  privacy: 'viewPrivacy',
+  trashBins: 'viewTrashBins',
+  extensions: 'viewExtensions',
+};
 
 function showView(name) {
   // Hide / show main panels
-  document.getElementById('viewScan').style.display        = name === 'scan'        ? '' : 'none';
-  document.getElementById('viewMaintenance').style.display = name === 'maintenance' ? '' : 'none';
+  Object.entries(VIEW_PANELS).forEach(([key, panelId]) => {
+    const panel = document.getElementById(panelId);
+    if (panel) panel.style.display = key === name ? '' : 'none';
+  });
 
   // Update sidebar active state
   Object.entries(VIEWS).forEach(([key, navId]) => {
     const el = document.getElementById(navId);
     if (el) el.classList.toggle('active', key === name);
   });
+
+  // Action bar is only relevant to scan results.
+  if (name !== 'scan') document.getElementById('actionBar').classList.remove('visible');
+  else updateActionBar();
 
   if (name === 'maintenance') initMaintenance();
 }

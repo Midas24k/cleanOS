@@ -79,15 +79,17 @@ describe('deleteFiles', () => {
   test('deletes a file and returns correct count', () => {
     const f = path.join(tmpDir, 'del.txt');
     fs.writeFileSync(f, 'bye');
-    const { deleted, failed } = deleteFiles([f]);
+    const { deleted, deletedBytes, failed } = deleteFiles([f]);
     expect(deleted).toBe(1);
+    expect(deletedBytes).toBeGreaterThan(0);
     expect(failed).toHaveLength(0);
     expect(fs.existsSync(f)).toBe(false);
   });
 
   test('records failed deletions without throwing', () => {
-    const { deleted, failed } = deleteFiles(['/nonexistent/nope.txt']);
+    const { deleted, deletedBytes, failed } = deleteFiles(['/nonexistent/nope.txt']);
     expect(deleted).toBe(0);
+    expect(deletedBytes).toBe(0);
     expect(failed).toHaveLength(1);
     expect(failed[0].path).toBe('/nonexistent/nope.txt');
     expect(failed[0].error).toBeDefined();
@@ -96,14 +98,16 @@ describe('deleteFiles', () => {
   test('handles mixed success and failure', () => {
     const good = path.join(tmpDir, 'good.txt');
     fs.writeFileSync(good, 'ok');
-    const { deleted, failed } = deleteFiles([good, '/nonexistent/bad.txt']);
+    const { deleted, deletedBytes, failed } = deleteFiles([good, '/nonexistent/bad.txt']);
     expect(deleted).toBe(1);
+    expect(deletedBytes).toBeGreaterThan(0);
     expect(failed).toHaveLength(1);
   });
 
   test('returns zero counts for empty array', () => {
-    const { deleted, failed } = deleteFiles([]);
+    const { deleted, deletedBytes, failed } = deleteFiles([]);
     expect(deleted).toBe(0);
+    expect(deletedBytes).toBe(0);
     expect(failed).toHaveLength(0);
   });
 });

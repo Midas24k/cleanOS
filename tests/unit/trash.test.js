@@ -20,7 +20,7 @@ beforeEach(() => {
   dirExists.mockReturnValue(false);
   walkDir.mockReturnValue([]);
   totalSize.mockReturnValue(0);
-  deleteFiles.mockReturnValue({ deleted: 0, failed: [] });
+  deleteFiles.mockReturnValue({ deleted: 0, deletedBytes: 0, failed: [] });
   childProcess.execSync.mockReturnValue('');
   // Prevent reading real /Volumes by default
   jest.spyOn(fs, 'readdirSync').mockReturnValue([]);
@@ -71,8 +71,12 @@ describe('scan', () => {
 describe('clean', () => {
   test('dry run returns preview shape without deleting', async () => {
     dirExists.mockImplementation(p => p === '/Users/testuser/.Trash');
-    walkDir.mockReturnValue(['/Users/testuser/.Trash/junk.zip']);
-    totalSize.mockReturnValue(1024);
+    walkDir
+      .mockReturnValueOnce(['/Users/testuser/.Trash/junk.zip'])
+      .mockReturnValueOnce([]);
+    totalSize
+      .mockReturnValueOnce(1024)
+      .mockReturnValueOnce(0);
 
     const result = await trash.clean({ dryRun: true });
     expect(result.dryRun).toBe(true);
@@ -83,8 +87,12 @@ describe('clean', () => {
 
   test('real clean uses osascript (Finder) as the primary method', async () => {
     dirExists.mockImplementation(p => p === '/Users/testuser/.Trash');
-    walkDir.mockReturnValue(['/Users/testuser/.Trash/junk.zip']);
-    totalSize.mockReturnValue(1024);
+    walkDir
+      .mockReturnValueOnce(['/Users/testuser/.Trash/junk.zip'])
+      .mockReturnValueOnce([]);
+    totalSize
+      .mockReturnValueOnce(1024)
+      .mockReturnValueOnce(0);
     childProcess.execSync.mockReturnValue('');
 
     const result = await trash.clean({ dryRun: false });
@@ -104,7 +112,7 @@ describe('clean', () => {
     childProcess.execSync.mockImplementation(() => {
       throw new Error('osascript not available');
     });
-    deleteFiles.mockReturnValue({ deleted: 1, failed: [] });
+    deleteFiles.mockReturnValue({ deleted: 1, deletedBytes: 1024, failed: [] });
 
     const result = await trash.clean({ dryRun: false });
 

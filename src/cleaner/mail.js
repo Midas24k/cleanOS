@@ -115,11 +115,11 @@ async function clean({ dryRun = true } = {}) {
     catch { return false; }
   });
 
-  const { deleted, failed } = deleteFiles(writable);
+  const { deleted, deletedBytes, failed } = deleteFiles(writable);
   return {
     dryRun: false,
     deleted,
-    freedBytes: sizeBytes,
+    freedBytes: deletedBytes,
     failed,
   };
 }

@@ -42,19 +42,25 @@ function totalSize(files) {
   return bytes;
 }
 
-// Delete a list of files. Returns { deleted, failed[] }
+// Delete a list of files. Returns { deleted, failed[], deletedBytes }
 function deleteFiles(files) {
   let deleted = 0;
+  let deletedBytes = 0;
   const failed = [];
   for (const f of files) {
     try {
+      let size = 0;
+      try {
+        size = fs.statSync(f).size || 0;
+      } catch { /* size unknown */ }
       fs.unlinkSync(f);
       deleted++;
+      deletedBytes += size;
     } catch (err) {
       failed.push({ path: f, error: err.message });
     }
   }
-  return { deleted, failed };
+  return { deleted, deletedBytes, failed };
 }
 
 // Check if a directory exists and is accessible

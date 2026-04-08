@@ -127,11 +127,11 @@ async function clean({ dryRun = true } = {}) {
     };
   }
 
-  const { deleted, failed } = deleteFiles(paths);
+  const { deleted, deletedBytes, failed } = deleteFiles(paths);
   return {
     dryRun: false,
     deleted,
-    freedBytes: sizeBytes,
+    freedBytes: deletedBytes,
     byBrowser,
     failed,
   };

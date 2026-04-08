@@ -14,7 +14,7 @@ beforeEach(() => {
   dirExists.mockReturnValue(false);
   walkDir.mockReturnValue([]);
   totalSize.mockReturnValue(0);
-  deleteFiles.mockReturnValue({ deleted: 0, failed: [] });
+  deleteFiles.mockReturnValue({ deleted: 0, deletedBytes: 0, failed: [] });
 });
 
 // ── scan ──────────────────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ describe('clean', () => {
     dirExists.mockImplementation(p => p.includes('testuser/Library/Caches'));
     walkDir.mockReturnValue([file]);
     totalSize.mockReturnValue(1024);
-    deleteFiles.mockReturnValue({ deleted: 1, failed: [] });
+    deleteFiles.mockReturnValue({ deleted: 1, deletedBytes: 1024, failed: [] });
 
     const result = await cache.clean({ dryRun: false });
 
@@ -103,7 +103,7 @@ describe('clean', () => {
     dirExists.mockReturnValue(true);
     walkDir.mockReturnValue(['/a.cache', '/b.cache']);
     totalSize.mockReturnValue(2048);
-    deleteFiles.mockReturnValue({ deleted: 1, failed: [{ path: '/b.cache', error: 'EACCES' }] });
+    deleteFiles.mockReturnValue({ deleted: 1, deletedBytes: 1024, failed: [{ path: '/b.cache', error: 'EACCES' }] });
 
     const result = await cache.clean({ dryRun: false });
     expect(result.deleted).toBe(1);

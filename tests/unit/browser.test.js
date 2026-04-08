@@ -14,7 +14,7 @@ beforeEach(() => {
   dirExists.mockReturnValue(false);
   walkDir.mockReturnValue([]);
   totalSize.mockReturnValue(0);
-  deleteFiles.mockReturnValue({ deleted: 0, failed: [] });
+  deleteFiles.mockReturnValue({ deleted: 0, deletedBytes: 0, failed: [] });
 });
 
 // ── scan ──────────────────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ describe('clean', () => {
     dirExists.mockImplementation(p => p.includes('Google/Chrome'));
     walkDir.mockReturnValue(['/path/chrome/cache/junk']);
     totalSize.mockReturnValue(2048);
-    deleteFiles.mockReturnValue({ deleted: 3, failed: [] });
+    deleteFiles.mockReturnValue({ deleted: 3, deletedBytes: 2048, failed: [] });
 
     const result = await browser.clean({ dryRun: false });
 
@@ -98,7 +98,7 @@ describe('clean', () => {
     dirExists.mockImplementation(p => p.includes('Google/Chrome'));
     walkDir.mockReturnValue(['/path/chrome/cache/junk']);
     totalSize.mockReturnValue(1024);
-    deleteFiles.mockReturnValue({ deleted: 1, failed: [] });
+    deleteFiles.mockReturnValue({ deleted: 1, deletedBytes: 1024, failed: [] });
 
     const result = await browser.clean({ dryRun: false });
     expect(result.byBrowser).toBeDefined();

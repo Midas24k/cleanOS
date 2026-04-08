@@ -160,13 +160,16 @@ function verifyDisk() {
         : out.split('\n').slice(-3).join(' '),
     };
   } catch (err) {
-    const stderr = err.stderr?.toString().trim() || err.message;
-    // Non-zero exit can mean "errors found" (not a crash)
-    if (stderr.includes('error') || stderr.includes('Error')) {
-      return { ok: false, error: stderr };
-    }
     const stdout = err.stdout?.toString().trim() || '';
-    return { ok: !!stdout, message: stdout || stderr };
+    const stderr = err.stderr?.toString().trim() || err.message || String(err);
+    const combined = [stdout, stderr].filter(Boolean).join('\n');
+    const healthy = /appears to be OK|verified/i.test(combined);
+    if (healthy) {
+      return { ok: true, message: 'Disk appears healthy — no errors found' };
+    }
+    // Non-zero exit indicates errors found; surface the most relevant tail.
+    const tail = combined.split('\n').slice(-4).join(' ');
+    return { ok: false, error: tail || 'Disk verification reported errors' };
   }
 }
 

@@ -116,6 +116,7 @@ ipcMain.handle('check-permissions', () => {
   // ~/Library/Mail is protected by TCC; readable only with Full Disk Access
   const probe = path.join(os.homedir(), 'Library', 'Mail');
   try {
+    if (!fs.existsSync(probe)) return { granted: true };
     fs.readdirSync(probe);
     return { granted: true };
   } catch {

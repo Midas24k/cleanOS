@@ -17,7 +17,7 @@ beforeEach(() => {
   dirExists.mockReturnValue(false);
   walkDir.mockReturnValue([]);
   totalSize.mockReturnValue(0);
-  deleteFiles.mockReturnValue({ deleted: 0, failed: [] });
+  deleteFiles.mockReturnValue({ deleted: 0, deletedBytes: 0, failed: [] });
 });
 
 afterEach(() => {
@@ -103,7 +103,7 @@ describe('clean', () => {
       if (p.includes('root-only')) throw new Error('EACCES: permission denied');
     });
     totalSize.mockReturnValue(4096);
-    deleteFiles.mockReturnValue({ deleted: 1, failed: [] });
+    deleteFiles.mockReturnValue({ deleted: 1, deletedBytes: 2048, failed: [] });
 
     const result = await logs.clean({ dryRun: false });
 
@@ -120,7 +120,7 @@ describe('clean', () => {
       throw new Error('EACCES');
     });
     totalSize.mockReturnValue(1024);
-    deleteFiles.mockReturnValue({ deleted: 0, failed: [] });
+    deleteFiles.mockReturnValue({ deleted: 0, deletedBytes: 0, failed: [] });
 
     await logs.clean({ dryRun: false });
     expect(deleteFiles).toHaveBeenCalledWith([]);

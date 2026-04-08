@@ -66,11 +66,14 @@ async function clean({ dryRun = true } = {}) {
       timeout: 30000,
       stdio: 'pipe',  // suppress osascript stderr — fallback handles the failure
     });
-    return { dryRun: false, deleted: fileCount, freedBytes: sizeBytes, failed: [], method: 'osascript' };
+    const after = await scan();
+    const freedBytes = Math.max(0, sizeBytes - after.sizeBytes);
+    const deleted = Math.max(0, fileCount - after.fileCount);
+    return { dryRun: false, deleted, freedBytes, failed: [], method: 'osascript' };
   } catch {
     // Fallback: manual deletion
-    const { deleted, failed } = deleteFiles(paths);
-    return { dryRun: false, deleted, freedBytes: sizeBytes, failed, method: 'manual' };
+    const { deleted, deletedBytes, failed } = deleteFiles(paths);
+    return { dryRun: false, deleted, freedBytes: deletedBytes, failed, method: 'manual' };
   }
 }
 
