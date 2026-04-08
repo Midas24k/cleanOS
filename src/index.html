@@ -119,6 +119,77 @@
 
   .error-toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--accent3); color: white; padding: 12px 20px; border-radius: 10px; font-family: 'DM Mono', monospace; font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 400; pointer-events: none; }
   .error-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Maintenance view ────────────────────────────────────────────────────── */
+  .maint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .maint-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.2s, box-shadow 0.2s; }
+  .maint-card:hover { border-color: var(--accent2); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+  .maint-top { display: flex; align-items: flex-start; gap: 14px; }
+  .maint-icon { font-size: 26px; flex-shrink: 0; line-height: 1; }
+  .maint-info { flex: 1; }
+  .maint-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .maint-desc { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; line-height: 1.5; }
+  .admin-badge { font-size: 10px; background: rgba(255,204,0,0.12); color: var(--accent4); border: 1px solid rgba(255,204,0,0.25); border-radius: 20px; padding: 1px 7px; font-family: 'DM Mono', monospace; white-space: nowrap; }
+  .maint-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .maint-status { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); flex: 1; min-height: 16px; line-height: 1.4; }
+  .maint-status.ok   { color: var(--accent); }
+  .maint-status.err  { color: var(--accent3); }
+  .btn-run { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 18px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s; white-space: nowrap; flex-shrink: 0; }
+  .btn-run:hover:not(:disabled) { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+  .btn-run:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-run.running { border-color: var(--accent); color: var(--accent); }
+  .spin-inline { display: inline-block; animation: spin 0.7s linear infinite; }
+
+  /* ── Responsive ──────────────────────────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .main { padding: 28px 28px 90px; }
+    .disk-card { gap: 20px; }
+    .ring-wrap { width: 104px; height: 104px; }
+    .ring-svg { width: 104px; height: 104px; }
+    .cat-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  }
+
+  @media (max-width: 900px) {
+    body { flex-direction: column; overflow: auto; }
+    .sidebar { width: 100%; min-height: auto; padding: 18px 18px 14px; border-right: none; border-bottom: 1px solid var(--border); }
+    .logo { padding: 0 6px 12px; }
+    .nav-section { padding: 0; margin-bottom: 4px; }
+    .nav-label { padding: 0 6px; }
+    .nav-item { padding: 8px 10px; }
+    .sidebar-footer { display: none; }
+    .main { padding: 22px 20px 110px; }
+    .header { flex-direction: column; gap: 14px; }
+    .scan-btn { width: 100%; justify-content: center; }
+    .disk-card { flex-direction: column; align-items: flex-start; }
+    .ring-wrap { align-self: center; }
+    .action-bar { left: 0; padding: 16px 20px; flex-direction: column; align-items: flex-start; gap: 12px; }
+    .action-btns { width: 100%; }
+    .btn-clean, .btn-deselect { flex: 1; }
+  }
+
+  @media (max-width: 640px) {
+    .header h1 { font-size: 26px; }
+    .header p { font-size: 12px; }
+    .disk-info h2 { font-size: 16px; }
+    .disk-info p { font-size: 12px; }
+    .cat-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .cat-card { padding: 16px; }
+    .cat-name { font-size: 14px; }
+    .cat-size { font-size: 20px; }
+    .maint-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+    .result-saved { font-size: 36px; }
+    .result-title { font-size: 22px; }
+  }
+
+  /* ── Permission banner ───────────────────────────────────────────────────── */
+  .perm-banner { display: none; align-items: center; gap: 16px; background: rgba(255,204,0,0.08); border: 1px solid rgba(255,204,0,0.3); border-radius: var(--radius); padding: 18px 22px; margin-bottom: 24px; }
+  .perm-banner.show { display: flex; }
+  .perm-icon { font-size: 28px; flex-shrink: 0; }
+  .perm-text { flex: 1; }
+  .perm-text strong { font-size: 14px; font-weight: 700; color: var(--accent4); display: block; margin-bottom: 4px; }
+  .perm-text span { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; line-height: 1.5; }
+  .btn-perm { background: var(--accent4); color: #0b0d11; border: none; border-radius: 10px; padding: 10px 18px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; flex-shrink: 0; }
+  .btn-perm:hover { opacity: 0.85; }
 </style>
 </head>
 <body>
@@ -127,12 +198,13 @@
   <div class="logo">Clean<span>OS</span></div>
   <div class="nav-section">
     <div class="nav-label">Main</div>
-    <div class="nav-item active"><span class="nav-icon">🧹</span><span>Smart Scan</span></div>
+    <div class="nav-item active" id="navScan" onclick="showView('scan')"><span class="nav-icon">🧹</span><span>Smart Scan</span></div>
     <div class="nav-item"><span class="nav-icon">💾</span><span>Disk Usage</span></div>
     <div class="nav-item"><span class="nav-icon">🚀</span><span>Startup Apps</span></div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Tools</div>
+    <div class="nav-item" id="navMaintenance" onclick="showView('maintenance')"><span class="nav-icon">🔧</span><span>Maintenance</span></div>
     <div class="nav-item"><span class="nav-icon">🔐</span><span>Privacy</span></div>
     <div class="nav-item"><span class="nav-icon">🗑️</span><span>Trash Bins</span></div>
     <div class="nav-item"><span class="nav-icon">📦</span><span>Extensions</span></div>
@@ -152,13 +224,22 @@
   </div>
 </nav>
 
-<main class="main">
+<main class="main" id="viewScan">
   <div class="header">
     <div>
       <h1>Smart <span>Scan</span></h1>
       <p id="lastScan">Never scanned — click to analyze your system</p>
     </div>
     <button class="scan-btn" id="scanBtn" onclick="startScan()">▶ Run Scan</button>
+  </div>
+
+  <div class="perm-banner" id="permBanner">
+    <div class="perm-icon">🔒</div>
+    <div class="perm-text">
+      <strong>Full Disk Access Required</strong>
+      <span>CleanOS needs Full Disk Access to scan and clean Mail, Safari, and system directories.<br>Grant it in System Settings, then relaunch the app.</span>
+    </div>
+    <button class="btn-perm" onclick="openPrivacySettings()">Open System Settings</button>
   </div>
 
   <div class="disk-card" id="diskCard" style="opacity:0.4">
@@ -194,6 +275,19 @@
   <div class="cat-grid" id="catGrid"></div>
 </main>
 
+<main class="main" id="viewMaintenance" style="display:none">
+  <div class="header">
+    <div>
+      <h1>System <span>Maintenance</span></h1>
+      <p>Automated tasks to tune performance and fix common macOS issues</p>
+    </div>
+  </div>
+  <div class="section-title">Available Tasks</div>
+  <div class="maint-grid" id="maintGrid">
+    <div style="color:var(--muted);font-family:'DM Mono',monospace;font-size:13px">Loading tasks…</div>
+  </div>
+</main>
+
 <div class="action-bar" id="actionBar">
   <div class="action-summary">
     <strong id="totalSize">0 B</strong>
@@ -226,6 +320,21 @@
 <div class="error-toast" id="errorToast"></div>
 
 <script>
+// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Permissions ───────────────────────────────────────────────────────────────
+async function checkPermissions() {
+  if (!window.cleanos) return;
+  const { granted } = await window.cleanos.checkPermissions();
+  document.getElementById('permBanner').classList.toggle('show', !granted);
+}
+
+function openPrivacySettings() {
+  window.cleanos.openPrivacySettings();
+}
+
+// Check on startup
+checkPermissions();
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
@@ -265,6 +374,7 @@ const CATEGORY_META = {
   developer: { icon: '🛠️', name: 'Developer Tools',  desc: 'Xcode, npm, Homebrew, pip caches',       color: '#bf5af2' },
   downloads: { icon: '📥', name: 'Large Downloads',  desc: 'Files >50 MB older than 30 days',        color: '#ff9f0a' },
   system:    { icon: '🖥️', name: 'System Data',      desc: 'Temp files & Time Machine snapshots',   color: '#ff6b6b' },
+  mail:      { icon: '✉️',  name: 'Mail Attachments', desc: 'Cached attachments & mail downloads',   color: '#5ac8fa' },
 };
 
 let scanData = {};     // { cache: {sizeBytes, fileCount}, ... }
@@ -466,6 +576,103 @@ function dismissResult() {
 
 // Init dry label
 updateDryLabel();
+
+// ── View switching ────────────────────────────────────────────────────────────
+const VIEWS = { scan: 'navScan', maintenance: 'navMaintenance' };
+
+function showView(name) {
+  // Hide / show main panels
+  document.getElementById('viewScan').style.display        = name === 'scan'        ? '' : 'none';
+  document.getElementById('viewMaintenance').style.display = name === 'maintenance' ? '' : 'none';
+
+  // Update sidebar active state
+  Object.entries(VIEWS).forEach(([key, navId]) => {
+    const el = document.getElementById(navId);
+    if (el) el.classList.toggle('active', key === name);
+  });
+
+  if (name === 'maintenance') initMaintenance();
+}
+
+// ── Maintenance ───────────────────────────────────────────────────────────────
+let maintTasks = [];      // task metadata from IPC
+let maintRunning = new Set();
+
+async function initMaintenance() {
+  if (maintTasks.length > 0) return;   // already loaded
+  if (!window.cleanos) {
+    document.getElementById('maintGrid').innerHTML =
+      '<div style="color:var(--accent3);font-family:\'DM Mono\',monospace;font-size:13px">IPC bridge not found — run inside Electron.</div>';
+    return;
+  }
+  try {
+    maintTasks = await window.cleanos.maintenanceList();
+    renderMaintenance();
+  } catch (err) {
+    document.getElementById('maintGrid').innerHTML =
+      `<div style="color:var(--accent3);font-family:'DM Mono',monospace;font-size:13px">Failed to load tasks: ${err.message}</div>`;
+  }
+}
+
+function renderMaintenance() {
+  const grid = document.getElementById('maintGrid');
+  grid.innerHTML = '';
+  for (const task of maintTasks) {
+    const card = document.createElement('div');
+    card.className = 'maint-card';
+    card.id = `maint-card-${task.id}`;
+    card.innerHTML = `
+      <div class="maint-top">
+        <span class="maint-icon">${task.icon}</span>
+        <div class="maint-info">
+          <div class="maint-name">
+            ${task.name}
+            ${task.requiresAdmin ? '<span class="admin-badge">⚠ requires password</span>' : ''}
+          </div>
+          <div class="maint-desc">${task.desc}</div>
+        </div>
+      </div>
+      <div class="maint-footer">
+        <div class="maint-status" id="maint-status-${task.id}"></div>
+        <button class="btn-run" id="maint-btn-${task.id}" onclick="runMaintTask('${task.id}')">Run</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+async function runMaintTask(taskId) {
+  if (maintRunning.has(taskId) || !window.cleanos) return;
+  maintRunning.add(taskId);
+
+  const btn    = document.getElementById(`maint-btn-${taskId}`);
+  const status = document.getElementById(`maint-status-${taskId}`);
+
+  btn.disabled    = true;
+  btn.classList.add('running');
+  btn.innerHTML   = '<span class="spin-inline">⟳</span> Running…';
+  status.className = 'maint-status';
+  status.textContent = '';
+
+  try {
+    const result = await window.cleanos.maintenanceRun(taskId);
+    if (result.ok) {
+      status.className   = 'maint-status ok';
+      status.textContent = '✓ ' + (result.message || 'Done');
+    } else {
+      status.className   = 'maint-status err';
+      status.textContent = '✗ ' + (result.error || 'Failed');
+    }
+  } catch (err) {
+    status.className   = 'maint-status err';
+    status.textContent = '✗ ' + err.message;
+  }
+
+  maintRunning.delete(taskId);
+  btn.disabled  = false;
+  btn.classList.remove('running');
+  btn.textContent = 'Run Again';
+}
 </script>
 </body>
 </html>

@@ -7,8 +7,9 @@ const browser   = require('./browser');
 const developer = require('./developer');
 const downloads = require('./downloads');
 const system    = require('./system');
+const mail      = require('./mail');
 
-const cleaners = { cache, logs, trash, browser, developer, downloads, system };
+const cleaners = { cache, logs, trash, browser, developer, downloads, system, mail };
 
 async function scanOne(category) {
   const mod = cleaners[category];

@@ -1,5 +1,7 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
+const fs   = require('fs');
+const os   = require('os');
 const { execSync } = require('child_process');
 const { Worker } = require('worker_threads');
 
@@ -105,3 +107,34 @@ ipcMain.handle('disk-info', () => {
 ipcMain.handle('clean', async (_event, categories, opts = { dryRun: true }) => {
   return runWorkerTask({ action: 'clean', categories, opts });
 });
+
+// ── Permissions ──────────────────────────────────────────────────────────────
+
+// Probe whether the app has Full Disk Access by attempting to read a path
+// that is only accessible with FDA granted. Returns { granted: bool }.
+ipcMain.handle('check-permissions', () => {
+  // ~/Library/Mail is protected by TCC; readable only with Full Disk Access
+  const probe = path.join(os.homedir(), 'Library', 'Mail');
+  try {
+    fs.readdirSync(probe);
+    return { granted: true };
+  } catch {
+    return { granted: false };
+  }
+});
+
+// Open System Settings → Privacy & Security → Full Disk Access
+ipcMain.handle('open-privacy-settings', () => {
+  shell.openExternal(
+    'x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles'
+  );
+});
+
+// ── Maintenance ──────────────────────────────────────────────────────────────
+const maintenance = require('./src/cleaner/maintenance');
+
+// List all maintenance tasks (metadata only, no execution)
+ipcMain.handle('maintenance-list', () => maintenance.list());
+
+// Run a single maintenance task by ID
+ipcMain.handle('maintenance-run', (_event, taskId) => maintenance.run(taskId));

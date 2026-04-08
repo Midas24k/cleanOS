@@ -18,4 +18,12 @@ contextBridge.exposeInMainWorld('cleanos', {
 
   // Real disk usage from df
   diskInfo: () => ipcRenderer.invoke('disk-info'),
+
+  // Maintenance tasks
+  maintenanceList: () => ipcRenderer.invoke('maintenance-list'),
+  maintenanceRun:  (taskId) => ipcRenderer.invoke('maintenance-run', taskId),
+
+  // macOS Full Disk Access
+  checkPermissions:    () => ipcRenderer.invoke('check-permissions'),
+  openPrivacySettings: () => ipcRenderer.invoke('open-privacy-settings'),
 });
