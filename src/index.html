@@ -22,6 +22,7 @@
   .nav-section { padding: 0 12px; margin-bottom: 8px; }
   .nav-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; padding: 0 12px; margin-bottom: 6px; }
   .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); transition: all 0.18s; position: relative; }
+  .nav-item { -webkit-app-region: no-drag; }
   .nav-item:hover { background: var(--surface2); color: var(--text); }
   .nav-item.active { background: rgba(0,229,160,0.1); color: var(--accent); }
   .nav-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 18px; background: var(--accent); border-radius: 2px; }
@@ -139,6 +140,24 @@
   .btn-run:disabled { opacity: 0.45; cursor: not-allowed; }
   .btn-run.running { border-color: var(--accent); color: var(--accent); }
   .spin-inline { display: inline-block; animation: spin 0.7s linear infinite; }
+
+  /* ── Trash view ──────────────────────────────────────────────────────────── */
+  .trash-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .trash-summary .cat-card { cursor: default; }
+  .trash-summary .cat-card:hover { border-color: var(--border); transform: none; box-shadow: none; }
+  .trash-summary .cat-size { color: var(--accent); }
+  .trash-preview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .trash-preview p { margin-bottom: 7px; line-height: 1.5; }
 
   /* ── Responsive ──────────────────────────────────────────────────────────── */
   @media (max-width: 1100px) {
@@ -319,8 +338,54 @@
   <div class="header">
     <div>
       <h1>Trash <span>Bins</span></h1>
-      <p>Advanced trash bin controls are coming soon.</p>
+      <p>Scan trash across your user and mounted volumes, preview deletions, then empty safely.</p>
     </div>
+    <div class="trash-actions">
+      <button class="btn-deselect" id="trashScanBtn" onclick="scanTrashBins()">Scan Trash</button>
+      <button class="btn-deselect" id="trashPreviewBtn" onclick="previewTrashBins()">Preview Delete</button>
+      <button class="btn-clean" id="trashCleanBtn" onclick="emptyTrashBins()">Empty Trash</button>
+    </div>
+  </div>
+
+  <div class="section-title">Trash Overview</div>
+  <div class="cat-grid trash-summary">
+    <div class="cat-card">
+      <div class="cat-top">
+        <span class="cat-icon">🗑️</span>
+        <div>
+          <div class="cat-name">Estimated Size</div>
+          <div class="cat-desc">Total bytes in all detected trash bins</div>
+        </div>
+      </div>
+      <div class="cat-size" id="trashSizeValue">0 B</div>
+    </div>
+
+    <div class="cat-card">
+      <div class="cat-top">
+        <span class="cat-icon">📄</span>
+        <div>
+          <div class="cat-name">Files Found</div>
+          <div class="cat-desc">Items currently discoverable for cleanup</div>
+        </div>
+      </div>
+      <div class="cat-size" id="trashCountValue">0</div>
+    </div>
+
+    <div class="cat-card">
+      <div class="cat-top">
+        <span class="cat-icon">ℹ️</span>
+        <div>
+          <div class="cat-name">Status</div>
+          <div class="cat-desc">Latest operation state</div>
+        </div>
+      </div>
+      <div class="cat-size" id="trashStatusValue" style="font-size:18px;color:var(--text)">Not scanned yet</div>
+    </div>
+  </div>
+
+  <div class="section-title">Preview Files</div>
+  <div class="trash-preview" id="trashPreviewList">
+    <p>Run "Scan Trash" to list files that can be removed.</p>
   </div>
 </main>
 
@@ -426,6 +491,7 @@ let scanData = {};     // { cache: {sizeBytes, fileCount}, ... }
 let diskData = {};     // { total, used, available } in bytes
 let selected = new Set();
 let scanned  = false;
+let trashScanData = null;
 
 // ── Scan ──────────────────────────────────────────────────────────────────────
 async function startScan() {
@@ -547,6 +613,114 @@ function deselectAll() {
   updateActionBar();
 }
 
+function setTrashStatus(message, isError = false) {
+  const el = document.getElementById('trashStatusValue');
+  if (!el) return;
+  el.textContent = message;
+  el.style.color = isError ? 'var(--accent3)' : 'var(--text)';
+}
+
+function setTrashButtonsBusy(busy, label) {
+  const scanBtn = document.getElementById('trashScanBtn');
+  const previewBtn = document.getElementById('trashPreviewBtn');
+  const cleanBtn = document.getElementById('trashCleanBtn');
+  if (!scanBtn || !previewBtn || !cleanBtn) return;
+
+  scanBtn.disabled = busy;
+  previewBtn.disabled = busy;
+  cleanBtn.disabled = busy;
+
+  if (label) cleanBtn.textContent = label;
+  else cleanBtn.textContent = 'Empty Trash';
+}
+
+function updateTrashOverview(data) {
+  document.getElementById('trashSizeValue').textContent = formatBytes(data.sizeBytes || 0);
+  document.getElementById('trashCountValue').textContent = (data.fileCount || 0).toLocaleString();
+}
+
+function renderTrashPreview(paths, title = null) {
+  const list = document.getElementById('trashPreviewList');
+  if (!list) return;
+
+  if (!paths || paths.length === 0) {
+    list.innerHTML = `<p>${title || 'No trash files found.'}</p>`;
+    return;
+  }
+
+  const lines = paths.slice(0, 40).map((p) => `<p>${p}</p>`).join('');
+  const extra = paths.length > 40 ? `<p>...and ${paths.length - 40} more files</p>` : '';
+  const head = title ? `<p>${title}</p>` : '';
+  list.innerHTML = head + lines + extra;
+}
+
+async function scanTrashBins() {
+  if (!window.cleanos) { showError('IPC bridge not found'); return; }
+
+  setTrashButtonsBusy(true, 'Scanning…');
+  setTrashStatus('Scanning trash bins…');
+
+  try {
+    const result = await window.cleanos.scan('trash');
+    trashScanData = result;
+    updateTrashOverview(result);
+    renderTrashPreview(result.paths, 'Detected files (up to 40 shown):');
+    setTrashStatus(`Scanned ${new Date().toLocaleTimeString()}`);
+  } catch (err) {
+    setTrashStatus('Scan failed', true);
+    showError('Trash scan failed: ' + err.message);
+  }
+
+  setTrashButtonsBusy(false);
+}
+
+async function previewTrashBins() {
+  if (!window.cleanos) { showError('IPC bridge not found'); return; }
+
+  setTrashButtonsBusy(true, 'Previewing…');
+  setTrashStatus('Running dry-run preview…');
+
+  try {
+    const result = await window.cleanos.clean(['trash'], true);
+    const trash = result?.trash || { wouldDelete: 0, wouldFreeBytes: 0, preview: [] };
+    updateTrashOverview({ sizeBytes: trash.wouldFreeBytes || 0, fileCount: trash.wouldDelete || 0 });
+    renderTrashPreview(trash.preview, 'Dry-run preview (up to 20 shown):');
+    setTrashStatus(`Preview: ${formatBytes(trash.wouldFreeBytes || 0)} across ${(trash.wouldDelete || 0).toLocaleString()} files`);
+  } catch (err) {
+    setTrashStatus('Preview failed', true);
+    showError('Trash preview failed: ' + err.message);
+  }
+
+  setTrashButtonsBusy(false);
+}
+
+async function emptyTrashBins() {
+  if (!window.cleanos) { showError('IPC bridge not found'); return; }
+  if (!confirm('Empty all detected trash bins now? This cannot be undone.')) return;
+
+  setTrashButtonsBusy(true, 'Emptying…');
+  setTrashStatus('Deleting trash files…');
+
+  try {
+    const result = await window.cleanos.clean(['trash'], false);
+    const trash = result?.trash || { deleted: 0, freedBytes: 0, failed: [] };
+    const skipped = trash.failed?.length || 0;
+    setTrashStatus(`Emptied ${formatBytes(trash.freedBytes || 0)} from ${(trash.deleted || 0).toLocaleString()} files${skipped ? ` (${skipped} skipped)` : ''}`);
+    renderTrashPreview([], 'Trash bins were emptied. Run Scan Trash to refresh.');
+    await scanTrashBins();
+  } catch (err) {
+    setTrashStatus('Clean failed', true);
+    showError('Empty trash failed: ' + err.message);
+  }
+
+  setTrashButtonsBusy(false);
+}
+
+async function initTrashBins() {
+  if (trashScanData) return;
+  await scanTrashBins();
+}
+
 function updateActionBar() {
   const bar = document.getElementById('actionBar');
   if (selected.size === 0) { bar.classList.remove('visible'); return; }
@@ -659,6 +833,7 @@ function showView(name) {
   else updateActionBar();
 
   if (name === 'maintenance') initMaintenance();
+  if (name === 'trashBins') initTrashBins();
 }
 
 // ── Maintenance ───────────────────────────────────────────────────────────────
