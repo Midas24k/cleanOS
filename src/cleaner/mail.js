@@ -18,7 +18,7 @@ const MAIL_ROOT     = path.join(HOME, 'Library', 'Mail');
 const MAIL_DL_DIR   = path.join(HOME, 'Library', 'Mail Downloads');
 const ONE_DAY_MS    = 24 * 60 * 60 * 1000;
 
-// Walk ~/Library/Mail/V*/*/ and collect all Attachments/ dirs inside .mbox packages
+// Walk ~/Library/Mail/V*/*/ and collect all Attachments/ dirs inside .mbox packages.
 function attachmentDirs() {
   const dirs = [];
   if (!dirExists(MAIL_ROOT)) return dirs;
@@ -48,7 +48,7 @@ function attachmentDirs() {
   return dirs;
 }
 
-// Recurse into an account dir, finding .mbox/Attachments/ paths
+// Recurse into an account dir, finding .mbox/Attachments/ paths.
 function collectMboxAttachmentDirs(dir, out) {
   let entries;
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
@@ -70,6 +70,7 @@ function collectMboxAttachmentDirs(dir, out) {
   }
 }
 
+// Guardrail: only delete attachments older than one day.
 function isOldEnough(filePath) {
   try {
     return (Date.now() - fs.statSync(filePath).mtimeMs) > ONE_DAY_MS;
@@ -78,6 +79,7 @@ function isOldEnough(filePath) {
   }
 }
 
+// Scan mail attachment caches and return totals + file list.
 async function scan() {
   const files = [];
 
@@ -98,6 +100,7 @@ async function scan() {
   };
 }
 
+// Clean mail attachment caches; dryRun returns a preview only.
 async function clean({ dryRun = true } = {}) {
   const { sizeBytes, fileCount, paths } = await scan();
 

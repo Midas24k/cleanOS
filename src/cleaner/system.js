@@ -31,6 +31,7 @@ const ONE_HOUR_MS   = 60 * 60 * 1000;
 
 // ── Time Machine snapshots ────────────────────────────────────────────────────
 
+// List Time Machine local snapshots (older than 1 hour is filtered later).
 function listSnapshots() {
   try {
     const out = execSync('tmutil listlocalsnapshots /', { stdio: 'pipe' }).toString();
@@ -50,6 +51,7 @@ function listSnapshots() {
   }
 }
 
+// Parse snapshot date string from tmutil output.
 function parseSnapshotDate(str) {
   // str = "2024-11-15-143022"
   const [y, mo, d, hms] = str.split('-');
@@ -57,6 +59,7 @@ function parseSnapshotDate(str) {
   return new Date(`${y}-${mo}-${d}T${h}:${mi}:${s}`);
 }
 
+// Filter snapshots to those older than ONE_HOUR_MS.
 function staleSnapshots() {
   const now = Date.now();
   return listSnapshots().filter(s => (now - s.date.getTime()) > ONE_HOUR_MS);
@@ -65,11 +68,13 @@ function staleSnapshots() {
 // Estimate snapshot size — tmutil doesn't expose it directly, so we read
 // the APFS snapshot list via diskutil and report count only. Size is reported
 // as 0 in scan; the UI will show "N snapshots" as the detail.
+// Return snapshot count and metadata for stale snapshots.
 function scanSnapshots() {
   const snaps = staleSnapshots();
   return { count: snaps.length, snaps };
 }
 
+// Delete snapshots by date identifier via tmutil.
 function deleteSnapshots(snaps) {
   let deleted = 0;
   const failed = [];
@@ -90,6 +95,7 @@ function deleteSnapshots(snaps) {
 // ── Stale temp files ──────────────────────────────────────────────────────────
 
 // os.tmpdir() returns the active user temp path (/var/folders/.../T)
+// Returns top-level entries older than THREE_DAYS_MS.
 function staleTempFiles() {
   const tmpDir = os.tmpdir();
   if (!dirExists(tmpDir)) return [];
@@ -116,6 +122,7 @@ function staleTempFiles() {
   return stale;
 }
 
+// Expand stale top-level entries into a flat list of files.
 function scanTempFiles(staleEntries) {
   // Walk each stale entry to get all files inside
   const files = [];
@@ -134,6 +141,7 @@ function scanTempFiles(staleEntries) {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+// Scan for stale temp files + TM snapshots and return totals.
 async function scan() {
   const { count: snapCount, snaps } = scanSnapshots();
   const staleEntries = staleTempFiles();
@@ -150,6 +158,7 @@ async function scan() {
   };
 }
 
+// Clean temp files + stale snapshots; dryRun returns a preview only.
 async function clean({ dryRun = true } = {}) {
   const { sizeBytes, fileCount, paths, snapshots, staleEntries } = await scan();
 

@@ -1,3 +1,5 @@
+// Electron main process entrypoint.
+// Owns the native window lifecycle and brokers file-system operations via IPC.
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs   = require('fs');
@@ -5,13 +7,17 @@ const os   = require('os');
 const { execSync } = require('child_process');
 const { Worker } = require('worker_threads');
 
+// Worker thread handles heavy scans/cleans off the main thread.
 const workerPath = path.join(__dirname, 'src', 'cleaner', 'worker.js');
 
+// Run a single worker task and resolve with its response payload.
+// Spawn a worker, send a task, and resolve with the result.
 function runWorkerTask(payload) {
   return new Promise((resolve, reject) => {
     const worker = new Worker(workerPath);
     let settled = false;
 
+    // Ensure we resolve/reject only once and always terminate the worker.
     const finish = (err, result) => {
       if (settled) return;
       settled = true;
@@ -37,6 +43,7 @@ function runWorkerTask(payload) {
   });
 }
 
+// Create the main application window.
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -52,11 +59,15 @@ function createWindow() {
     },
   });
 
+  // Single-page app is served from the local file system.
   win.loadFile(path.join(__dirname, 'src', 'index.html'));
 }
 
+// macOS behavior: keep app active until explicit quit.
 app.whenReady().then(createWindow);
+// Quit on all windows closed (except macOS where apps stay open).
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+// Recreate the window on dock click when none are open.
 app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 
 // ── IPC handlers ────────────────────────────────────────────────────────────
@@ -71,31 +82,38 @@ ipcMain.handle('scan-all', async () => {
   return runWorkerTask({ action: 'scan-all' });
 });
 
-// Real disk usage via diskutil info
-// Uses diskutil on two volumes because on APFS (macOS):
-//   - / is a sealed read-only system snapshot (~11 GB)
-//   - /System/Volumes/Data holds all user data (~200+ GB)
-//   - Container Total/Free are the same APFS container, so we only need them once
-//   - Summing both Volume Used Space values matches what Disk Utility reports
+// Real disk usage via macOS NSFileManager (JXA bridge).
+// Uses NSURLVolumeAvailableCapacityForImportantUsageKey — the same API macOS
+// System Storage uses. It includes purgeable space (local TM snapshots, APFS
+// cached data) so the "free" number matches what the user sees in Settings.
 ipcMain.handle('disk-info', () => {
   try {
-    const parseBytes = (str, label) => {
-      const m = str.match(new RegExp(`${label}:\\s+[\\d.]+ [TGMK]B \\(([\\d,]+) Bytes\\)`));
-      return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
-    };
+    const jxa = [
+      'ObjC.import("Foundation");',
+      'var url = $.NSURL.fileURLWithPath("/System/Volumes/Data");',
+      'var ra = url.resourceValuesForKeysError($.NSArray.arrayWithObject($.NSURLVolumeAvailableCapacityForImportantUsageKey), null);',
+      'var rt = url.resourceValuesForKeysError($.NSArray.arrayWithObject($.NSURLVolumeTotalCapacityKey), null);',
+      'rt.objectForKey($.NSURLVolumeTotalCapacityKey).description.js + "," +',
+      'ra.objectForKey($.NSURLVolumeAvailableCapacityForImportantUsageKey).description.js',
+    ].join(' ');
 
-    const sysOut  = execSync('diskutil info /',                    { stdio: 'pipe' }).toString();
-    const dataOut = execSync('diskutil info /System/Volumes/Data', { stdio: 'pipe' }).toString();
+    const out = execSync(`osascript -l JavaScript -e '${jxa}'`, { stdio: 'pipe' }).toString().trim();
+    const [totalStr, availStr] = out.split(',');
+    const total     = parseInt(totalStr, 10);
+    const available = parseInt(availStr, 10);
+    if (!total || !available) throw new Error('Could not parse volume capacity');
+    const used = total - available;
 
-    const total      = parseBytes(sysOut,  'Container Total Space');
-    const available  = parseBytes(dataOut, 'Container Free Space');
-    const sysUsed    = parseBytes(sysOut,  'Volume Used Space');
-    const dataUsed   = parseBytes(dataOut, 'Volume Used Space');
+    // Snap to nearest marketed drive size using base-10 (manufacturers use 1 GB = 1,000,000,000 bytes)
+    const MARKETED_GB = [64, 120, 128, 160, 240, 250, 256, 320, 480, 500, 512, 640, 750,
+                         1000, 2000, 4000, 8000, 16000, 32000];
+    const gb = total / 1e9;
+    const snapped = MARKETED_GB.reduce((best, s) =>
+      Math.abs(s - gb) < Math.abs(best - gb) ? s : best
+    );
+    const marketedLabel = snapped >= 1000 ? `${snapped / 1000} TB` : `${snapped} GB`;
 
-    if (!total || !available) throw new Error('Could not parse diskutil output');
-    const used = (sysUsed || 0) + (dataUsed || 0);
-
-    return { total, used, available };
+    return { total, used, available, marketedLabel };
   } catch (err) {
     return { error: err.message };
   }

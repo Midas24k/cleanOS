@@ -1,3 +1,4 @@
+// Playwright config for Electron UI smoke tests.
 const { defineConfig } = require('@playwright/test');
 
 module.exports = defineConfig({

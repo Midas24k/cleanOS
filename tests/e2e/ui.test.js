@@ -1,3 +1,4 @@
+// End-to-end smoke tests for the renderer UI (runs against static index.html).
 const { test, expect, chromium } = require('@playwright/test');
 const path = require('path');
 

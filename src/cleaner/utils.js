@@ -11,6 +11,7 @@ function resolvePath(p) {
 
 // Walk a directory recursively, collecting all file paths.
 // Skips paths we can't read (permissions) silently.
+// Returns an array of absolute file paths.
 function walkDir(dir, collected = []) {
   let entries;
   try {
@@ -32,6 +33,7 @@ function walkDir(dir, collected = []) {
 }
 
 // Get total size of a list of file paths (bytes)
+// Ignores files that can't be stat'ed.
 function totalSize(files) {
   let bytes = 0;
   for (const f of files) {
@@ -43,6 +45,7 @@ function totalSize(files) {
 }
 
 // Delete a list of files. Returns { deleted, failed[], deletedBytes }
+// Attempts every file; never throws on individual failures.
 function deleteFiles(files) {
   let deleted = 0;
   let deletedBytes = 0;
@@ -64,6 +67,7 @@ function deleteFiles(files) {
 }
 
 // Check if a directory exists and is accessible
+// Uses read permission as a proxy for safe scanning.
 function dirExists(p) {
   try {
     fs.accessSync(p, fs.constants.R_OK);

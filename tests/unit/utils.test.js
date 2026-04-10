@@ -1,3 +1,4 @@
+// Unit tests for low-level filesystem utilities.
 const fs   = require('fs');
 const os   = require('os');
 const path = require('path');

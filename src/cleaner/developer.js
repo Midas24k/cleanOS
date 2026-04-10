@@ -47,6 +47,7 @@ const TARGETS = [
   { name: 'Homebrew Cache',          dir: `${HOME}/Library/Caches/Homebrew` },
 ];
 
+// Scan known developer cache locations and return totals + breakdown.
 async function scan() {
   const allFiles = [];
   const byTarget = {};
@@ -67,6 +68,7 @@ async function scan() {
   };
 }
 
+// Clean developer caches; dryRun returns a preview only.
 async function clean({ dryRun = true } = {}) {
   const { sizeBytes, fileCount, paths, byTarget } = await scan();
 

@@ -1,10 +1,11 @@
+// Preload runs in an isolated context. It exposes a safe API to the renderer.
 const { contextBridge, ipcRenderer } = require('electron');
 
 // Expose a clean, typed API to the renderer.
 // The renderer never touches ipcRenderer or Node directly.
 contextBridge.exposeInMainWorld('cleanos', {
 
-  // Scan one category: 'cache' | 'logs' | 'trash' | 'browser'
+  // Scan one category: 'cache' | 'logs' | 'trash' | 'browser' | ...
   scan: (category) => ipcRenderer.invoke('scan', category),
 
   // Scan all categories at once
@@ -16,7 +17,7 @@ contextBridge.exposeInMainWorld('cleanos', {
   clean: (categories, dryRun = true) =>
     ipcRenderer.invoke('clean', categories, { dryRun }),
 
-  // Real disk usage from df
+  // Real disk usage from diskutil (macOS)
   diskInfo: () => ipcRenderer.invoke('disk-info'),
 
   // Maintenance tasks

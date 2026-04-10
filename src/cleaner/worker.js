@@ -1,3 +1,5 @@
+// Worker thread for long-running scan/clean tasks.
+// Keeps the UI responsive by running filesystem work off the main thread.
 const { parentPort } = require('worker_threads');
 
 const cache     = require('./cache');
@@ -9,14 +11,17 @@ const downloads = require('./downloads');
 const system    = require('./system');
 const mail      = require('./mail');
 
+// Registry of available cleaning modules keyed by category name.
 const cleaners = { cache, logs, trash, browser, developer, downloads, system, mail };
 
+// Run a single category scan.
 async function scanOne(category) {
   const mod = cleaners[category];
   if (!mod) throw new Error(`Unknown category: ${category}`);
   return mod.scan();
 }
 
+// Scan all categories in parallel and return a map of results.
 async function scanAll() {
   const results = {};
   await Promise.all(
@@ -31,6 +36,7 @@ async function scanAll() {
   return results;
 }
 
+// Clean the selected categories sequentially to reduce disk contention.
 async function cleanMany(categories, opts = { dryRun: true }) {
   const results = {};
   for (const key of categories || []) {
@@ -45,6 +51,7 @@ async function cleanMany(categories, opts = { dryRun: true }) {
   return results;
 }
 
+// Create a human-friendly label for error reporting.
 function describeAction(msg) {
   if (!msg || !msg.action) return 'unknown action';
   if (msg.action === 'scan') return `scan(${msg.category || 'unknown'})`;

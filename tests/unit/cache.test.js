@@ -1,3 +1,4 @@
+// Unit tests for cache scanning and skip rules.
 jest.mock('../../src/cleaner/utils', () => ({
   walkDir:     jest.fn(),
   totalSize:   jest.fn(),

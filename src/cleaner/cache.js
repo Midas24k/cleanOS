@@ -20,6 +20,7 @@ const CACHE_DIRS = [
 
 // App sandboxed container caches — same content as ~/Library/Caches but
 // stored per-container for apps distributed via the Mac App Store
+// Returns a list of container cache directories that exist.
 function containerCacheDirs() {
   const containersRoot = `${HOME}/Library/Containers`;
   if (!dirExists(containersRoot)) return [];
@@ -41,12 +42,14 @@ const SKIP_SUBDIRS = new Set([
   'com.apple.TCC',           // privacy permissions db
 ]);
 
+// Determine whether a file path should be excluded from cache cleaning.
 function shouldSkip(filePath) {
   const parts = filePath.split(path.sep);
   // If any path segment is in the skip list, ignore this file
   return parts.some(p => SKIP_SUBDIRS.has(p));
 }
 
+// Scan cache targets and return totals + file list.
 async function scan() {
   const files = [];
   const allDirs = [...CACHE_DIRS, ...containerCacheDirs()];
@@ -64,6 +67,7 @@ async function scan() {
   };
 }
 
+// Clean cache files; dryRun returns a preview only.
 async function clean({ dryRun = true } = {}) {
   const { sizeBytes, fileCount, paths } = await scan();
 

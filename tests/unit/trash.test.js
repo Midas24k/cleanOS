@@ -1,3 +1,4 @@
+// Unit tests for trash scanning and emptying behavior.
 jest.mock('../../src/cleaner/utils', () => ({
   walkDir:     jest.fn(),
   totalSize:   jest.fn(),

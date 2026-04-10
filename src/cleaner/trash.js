@@ -12,11 +12,13 @@
 //   - Never delete the .Trash directory itself, only its contents
 
 const fs      = require('fs');
+const path    = require('path');
 const { execSync } = require('child_process');
 const { walkDir, totalSize, deleteFiles, dirExists, HOME } = require('./utils');
 
 const UID = process.getuid ? process.getuid() : null;
 
+// Build a list of trash directories for the current user.
 function getTrashDirs() {
   const dirs = [`${HOME}/.Trash`];
 
@@ -34,22 +36,34 @@ function getTrashDirs() {
   return dirs;
 }
 
+// Scan trash bins and return totals + top-level item list.
 async function scan() {
-  const files = [];
+  const allFiles = [];      // all files recursively — for size + fallback delete
+  const topLevelItems = []; // what the user actually put in trash (for display)
+
   for (const dir of getTrashDirs()) {
     if (!dirExists(dir)) continue;
-    files.push(...walkDir(dir));
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.name.startsWith('.')) continue; // skip macOS metadata (.DS_Store etc.)
+        topLevelItems.push(path.join(dir, entry.name));
+      }
+    } catch { /* permission denied — skip */ }
+    allFiles.push(...walkDir(dir));
   }
 
   return {
-    sizeBytes: totalSize(files),
-    fileCount: files.length,
-    paths: files,
+    sizeBytes: totalSize(allFiles),
+    fileCount: topLevelItems.length, // items user put in trash, matching Finder's count
+    paths: topLevelItems,            // top-level items shown in preview
+    allFiles,                        // internal: used by clean() fallback
   };
 }
 
+// Empty trash bins; dryRun returns a preview only.
 async function clean({ dryRun = true } = {}) {
-  const { sizeBytes, fileCount, paths } = await scan();
+  const { sizeBytes, fileCount, paths, allFiles } = await scan();
 
   if (dryRun) {
     return {
@@ -71,8 +85,8 @@ async function clean({ dryRun = true } = {}) {
     const deleted = Math.max(0, fileCount - after.fileCount);
     return { dryRun: false, deleted, freedBytes, failed: [], method: 'osascript' };
   } catch {
-    // Fallback: manual deletion
-    const { deleted, deletedBytes, failed } = deleteFiles(paths);
+    // Fallback: manual deletion — uses all individual files (dirs can't be unlinked)
+    const { deleted, deletedBytes, failed } = deleteFiles(allFiles);
     return { dryRun: false, deleted, freedBytes: deletedBytes, failed, method: 'manual' };
   }
 }

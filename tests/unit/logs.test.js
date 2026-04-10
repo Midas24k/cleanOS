@@ -1,3 +1,4 @@
+// Unit tests for log file scanning and deletion rules.
 jest.mock('../../src/cleaner/utils', () => ({
   walkDir:     jest.fn(),
   totalSize:   jest.fn(),

@@ -59,7 +59,8 @@ const BROWSERS = [
 ];
 
 // Chromium-based browsers store caches under Default/ and any numbered Profile N/
-// This picks up all profiles rather than only Default
+// This picks up all profiles rather than only Default.
+// Returns a list of cache directories for an app if they exist.
 function chromiumProfileCacheDirs(appDir) {
   const base = `${HOME}/Library/Application Support/${appDir}`;
   if (!dirExists(base)) return [];
@@ -78,6 +79,7 @@ function chromiumProfileCacheDirs(appDir) {
   return dirs.filter(dirExists);
 }
 
+// Return Firefox profile cache directories (cache2).
 function firefoxCacheDirs() {
   const profilesRoot = `${HOME}/Library/Application Support/Firefox/Profiles`;
   if (!dirExists(profilesRoot)) return [];
@@ -91,6 +93,7 @@ function firefoxCacheDirs() {
   }
 }
 
+// Scan all browser caches and return totals + per-browser breakdown.
 async function scan() {
   const allFiles = [];
   const byBrowser = {};
@@ -114,6 +117,7 @@ async function scan() {
   };
 }
 
+// Clean browser caches; dryRun returns a preview only.
 async function clean({ dryRun = true } = {}) {
   const { sizeBytes, fileCount, paths, byBrowser } = await scan();
 

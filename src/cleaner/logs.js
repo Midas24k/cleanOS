@@ -30,6 +30,7 @@ const ROTATED_LOG_RE = /\.\d+$/;
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
+// Check whether a file path looks like a log or rotated log.
 function isLogFile(filePath) {
   const ext = path.extname(filePath).toLowerCase();
   if (LOG_EXTENSIONS.has(ext)) return true;
@@ -37,6 +38,7 @@ function isLogFile(filePath) {
   return false;
 }
 
+// Guardrail: only delete logs older than one day.
 function isOldEnough(filePath) {
   try {
     const stat = fs.statSync(filePath);
@@ -46,6 +48,7 @@ function isOldEnough(filePath) {
   }
 }
 
+// Scan known log directories and return totals + file list.
 async function scan() {
   const files = [];
 
@@ -64,6 +67,7 @@ async function scan() {
   };
 }
 
+// Clean log files; dryRun returns a preview only.
 async function clean({ dryRun = true } = {}) {
   const { sizeBytes, fileCount, paths } = await scan();
 

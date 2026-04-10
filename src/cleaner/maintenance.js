@@ -55,6 +55,7 @@ function runAsUser(shellCmd, timeoutMs = 30_000) {
 
 // ── Individual tasks ──────────────────────────────────────────────────────────
 
+// Flush local DNS caches and restart mDNSResponder.
 function flushDns() {
   // dscacheutil clears the local resolver cache;
   // killall -HUP mDNSResponder restarts the mDNS daemon that macOS uses for
@@ -62,6 +63,7 @@ function flushDns() {
   return runAsAdmin('dscacheutil -flushcache; killall -HUP mDNSResponder');
 }
 
+// Rebuild Launch Services database (Open With / associations).
 function rebuildLaunchServices() {
   // lsregister -kill forces a full rebuild of the Launch Services database.
   // This fixes stale "Open With" menus and app-file association issues.
@@ -75,6 +77,7 @@ function rebuildLaunchServices() {
   );
 }
 
+// Clear font caches (rebuilds on next login).
 function clearFontCache() {
   // atsutil removes the font registration databases.
   // macOS rebuilds them on next login / app launch.
@@ -82,6 +85,7 @@ function clearFontCache() {
   return runAsAdmin('atsutil databases -remove');
 }
 
+// Force the kernel to purge inactive memory pages.
 function purgeMemory() {
   // `purge` asks the kernel to release inactive anonymous memory pages.
   // Useful after memory-intensive work; macOS will reclaim naturally but
@@ -89,6 +93,7 @@ function purgeMemory() {
   return runAsAdmin('purge');
 }
 
+// VACUUM user-owned SQLite DBs to reclaim space.
 function optimizeSqlite() {
   // Find SQLite databases owned by the current user that are safe to VACUUM:
   //   • Browser history / favicons / cookies
@@ -137,6 +142,7 @@ function optimizeSqlite() {
 }
 
 // Expand glob-style Firefox profile dirs into specific file paths
+// Expand profile directories into concrete file paths.
 function globProfiles(profilesDir, filenames) {
   try {
     return fs.readdirSync(profilesDir).flatMap(profile =>
@@ -147,6 +153,7 @@ function globProfiles(profilesDir, filenames) {
   }
 }
 
+// Run a read-only disk verification on the startup volume.
 function verifyDisk() {
   // diskutil verifyVolume is read-only — reports errors without modifying anything.
   try {
@@ -229,6 +236,7 @@ const TASKS = [
 // ── Public API ────────────────────────────────────────────────────────────────
 
 // Returns the static metadata list (safe to send to renderer over IPC)
+// Return task metadata for UI rendering.
 function list() {
   return TASKS.map(({ id, name, desc, icon, requiresAdmin }) =>
     ({ id, name, desc, icon, requiresAdmin }),
@@ -236,6 +244,7 @@ function list() {
 }
 
 // Runs a single task by ID. Returns { ok, message?, error? }.
+// Run a single maintenance task by ID.
 async function run(taskId) {
   const task = TASKS.find(t => t.id === taskId);
   if (!task) return { ok: false, error: `Unknown task: ${taskId}` };

@@ -1,3 +1,4 @@
+// Unit tests for system cleanup logic (snapshots + temp files).
 jest.mock('../../src/cleaner/utils', () => ({
   walkDir:     jest.fn(),
   totalSize:   jest.fn(),

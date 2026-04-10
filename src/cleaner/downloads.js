@@ -17,6 +17,7 @@ const MIN_AGE_MS     = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 const DOWNLOADS_DIR = `${HOME}/Downloads`;
 
+// Scan top-level Downloads for large, old files.
 function getStaleDownloads() {
   let entries;
   try {
@@ -43,6 +44,7 @@ function getStaleDownloads() {
   return files.sort((a, b) => b.sizeBytes - a.sizeBytes);
 }
 
+// Return a summary of stale download candidates.
 async function scan() {
   const items     = getStaleDownloads();
   const paths     = items.map(i => i.path);
@@ -56,6 +58,7 @@ async function scan() {
   };
 }
 
+// Delete stale downloads; dryRun returns a preview only.
 async function clean({ dryRun = true } = {}) {
   const { sizeBytes, fileCount, paths, items } = await scan();
 

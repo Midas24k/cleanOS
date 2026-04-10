@@ -1,3 +1,4 @@
+// Unit tests for browser cache scanning across supported browsers.
 jest.mock('../../src/cleaner/utils', () => ({
   walkDir:     jest.fn(),
   totalSize:   jest.fn(),
