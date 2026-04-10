@@ -117,9 +117,10 @@
   .disk-info p { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 18px; }
   .disk-bar { display: flex; height: 8px; border-radius: 8px; overflow: hidden; gap: 2px; margin-bottom: 10px; background: var(--surface2); }
   .disk-seg { border-radius: 8px; transition: width 1s ease; min-width: 0; }
-  .disk-legend { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+  .disk-legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 12px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-family: 'DM Mono', monospace; }
-  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .legend-size { color: var(--muted); margin-left: 2px; }
 
   .section-title { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 16px; margin-top: 32px; }
   /* Scan category cards */
@@ -385,15 +386,8 @@
     <div class="disk-info">
       <h2>System Drive</h2>
       <p id="diskSubtext">Run a scan to analyze disk usage</p>
-      <div class="disk-bar" id="diskBar">
-        <div class="disk-seg" id="segJunk" style="background:#ff5e5e;width:0%"></div>
-        <div class="disk-seg" id="segUsed" style="background:#0097ff;width:0%"></div>
-      </div>
-      <div class="disk-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#ff5e5e"></div>Junk Found</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#0097ff"></div>In Use</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#252a38;border:1px solid #444"></div>Free</div>
-      </div>
+      <div class="disk-bar" id="diskBar"></div>
+      <div class="disk-legend" id="diskLegend"></div>
     </div>
   </div>
 
@@ -643,6 +637,53 @@ function formatDiskBytes(bytes) {
   return (bytes / 1e12).toFixed(2) + ' TB';
 }
 
+const DISK_CATS = [
+  { key: 'apps',      label: 'Apps',      color: '#3B82F6' },
+  { key: 'photos',    label: 'Photos',    color: '#F59E0B' },
+  { key: 'media',     label: 'Media',     color: '#EC4899' },
+  { key: 'documents', label: 'Docs',      color: '#8B5CF6' },
+  { key: 'developer', label: 'Developer', color: '#10B981' },
+  { key: 'mail',      label: 'Mail',      color: '#06B6D4' },
+  { key: 'other',     label: 'Other',     color: '#6B7280' },
+];
+
+function renderDiskBreakdown() {
+  const bar    = document.getElementById('diskBar');
+  const legend = document.getElementById('diskLegend');
+  if (!diskData.total || !bar || !legend) return;
+
+  // Other = used minus all known categories
+  const knownSum = DISK_CATS.filter(c => c.key !== 'other')
+    .reduce((s, c) => s + (breakdownData[c.key] || 0), 0);
+  const data = { ...breakdownData, other: Math.max(0, (diskData.used || 0) - knownSum) };
+
+  // Bar segments — start at 0 width then animate in
+  bar.innerHTML = DISK_CATS.map(({ key, color }) => {
+    const pct = (data[key] || 0) / diskData.total * 100;
+    return pct >= 0.2
+      ? `<div class="disk-seg" style="background:${color};width:0%" data-pct="${pct.toFixed(2)}"></div>`
+      : '';
+  }).join('');
+  setTimeout(() => {
+    bar.querySelectorAll('.disk-seg').forEach(el => { el.style.width = el.dataset.pct + '%'; });
+  }, 100);
+
+  // Legend
+  const items = DISK_CATS.map(({ key, label, color }) => {
+    const bytes = data[key] || 0;
+    if (bytes < 50 * 1024 * 1024) return '';
+    return `<div class="legend-item">
+      <div class="legend-dot" style="background:${color}"></div>
+      <span>${label}</span><span class="legend-size">${formatDiskBytes(bytes)}</span>
+    </div>`;
+  }).join('');
+
+  legend.innerHTML = items + `<div class="legend-item">
+    <div class="legend-dot" style="background:var(--surface2);border:1px solid var(--border)"></div>
+    <span>Free</span><span class="legend-size">${formatDiskBytes(diskData.available || 0)}</span>
+  </div>`;
+}
+
 // Show a transient error message at the bottom of the app.
 function showError(msg) {
   const t = document.getElementById('errorToast');
@@ -678,12 +719,16 @@ const CATEGORY_META = {
   downloads: { icon: '📥', name: 'Large Downloads',  desc: 'Files >50 MB older than 30 days',        color: '#ff9f0a' },
   system:    { icon: '🖥️', name: 'System Data',      desc: 'Temp files & Time Machine snapshots',   color: '#ff6b6b' },
   mail:      { icon: '✉️',  name: 'Mail Attachments', desc: 'Cached attachments & mail downloads',   color: '#5ac8fa' },
+  appsupport: { icon: '🗂️', name: 'App Support',      desc: 'Orphaned app data & cache files in Application Support', color: '#ff6b9d' },
+  simulator:  { icon: '📱', name: 'iOS Simulators',   desc: 'Unavailable simulator device records',                   color: '#30d158' },
+  imessage:   { icon: '💬', name: 'iMessage',          desc: 'Shared photos, videos & attachments — re-downloads if iCloud Messages is on', color: '#0a84ff' },
 };
 
-let scanData = {};     // { cache: {sizeBytes, fileCount}, ... }
-let diskData = {};     // { total, used, available } in bytes
-let selected = new Set();
-let scanned  = false;
+let scanData      = {};  // { cache: {sizeBytes, fileCount}, ... }
+let diskData      = {};  // { total, used, available } in bytes
+let breakdownData = {};  // { apps, photos, media, documents, developer, mail }
+let selected      = new Set();
+let scanned       = false;
 let trashScanData = null;
 
 // ── Scan ──────────────────────────────────────────────────────────────────────
@@ -708,13 +753,13 @@ async function startScan() {
   }, 400);
 
   try {
-    // Disk info is optional; fall back gracefully if IPC isn't available.
-    const diskInfo = typeof window.cleanos.diskInfo === 'function'
-      ? window.cleanos.diskInfo()
-      : Promise.resolve({});
-    [scanData, diskData] = await Promise.all([
+    // Disk info and breakdown are optional; fall back gracefully if IPC isn't available.
+    const diskInfo      = typeof window.cleanos.diskInfo      === 'function' ? window.cleanos.diskInfo()      : Promise.resolve({});
+    const diskBreakdown = typeof window.cleanos.diskBreakdown === 'function' ? window.cleanos.diskBreakdown() : Promise.resolve({});
+    [scanData, diskData, breakdownData] = await Promise.all([
       window.cleanos.scanAll(),
       diskInfo,
+      diskBreakdown,
     ]);
   } catch (err) {
     clearInterval(ticker);
@@ -755,11 +800,9 @@ function finishScan() {
     ? `${formatDiskBytes(diskData.used)} used of ${diskData.marketedLabel || formatDiskBytes(diskData.total)} — ${formatDiskBytes(diskData.available)} free`
     : `${formatBytes(totalJunk)} of junk detected`;
   setTimeout(() => {
-    // Ring tracks total used %: circumference = 283, offset = 283 * (1 - usedPct/100)
     document.getElementById('ringFill').style.strokeDashoffset = 283 * (1 - usedPct / 100);
-    document.getElementById('segJunk').style.width  = junkPct  + '%';
-    document.getElementById('segUsed').style.width  = cleanPct + '%';
   }, 100);
+  renderDiskBreakdown();
 
   // Select all categories by default to match typical "one-click clean" UX.
   selected = new Set(Object.keys(scanData));

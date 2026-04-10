@@ -4,7 +4,7 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs   = require('fs');
 const os   = require('os');
-const { execSync } = require('child_process');
+const { execSync, exec } = require('child_process');
 const { Worker } = require('worker_threads');
 
 // Worker thread handles heavy scans/cleans off the main thread.
@@ -117,6 +117,33 @@ ipcMain.handle('disk-info', () => {
   } catch (err) {
     return { error: err.message };
   }
+});
+
+// iOS-style disk breakdown — runs du on key directories in parallel.
+// Each category resolves independently; slow/missing dirs fall back to 0.
+ipcMain.handle('disk-breakdown', () => {
+  const home = os.homedir();
+
+  const duBytes = (dirs) => new Promise(resolve => {
+    const existing = dirs.filter(p => { try { return fs.existsSync(p); } catch { return false; } });
+    if (!existing.length) return resolve(0);
+    const escaped = existing.map(p => `'${p.replace(/'/g, "'\\''")}'`).join(' ');
+    exec(`du -skx ${escaped} 2>/dev/null | awk '{s+=$1}END{print s+0}'`,
+      { timeout: 15000 },
+      (_, stdout) => resolve((parseInt(stdout.trim() || '0', 10)) * 1024)
+    );
+  });
+
+  return Promise.all([
+    duBytes(['/Applications', path.join(home, 'Applications')]),
+    duBytes([path.join(home, 'Pictures')]),
+    duBytes([path.join(home, 'Music'), path.join(home, 'Movies')]),
+    duBytes([path.join(home, 'Documents'), path.join(home, 'Desktop'), path.join(home, 'Downloads')]),
+    duBytes([path.join(home, 'Library', 'Developer')]),
+    duBytes([path.join(home, 'Library', 'Mail'), path.join(home, 'Library', 'Mail Downloads')]),
+  ]).then(([apps, photos, media, documents, developer, mail]) => ({
+    apps, photos, media, documents, developer, mail,
+  }));
 });
 
 // Clean selected categories

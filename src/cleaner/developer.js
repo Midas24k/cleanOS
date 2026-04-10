@@ -25,13 +25,12 @@
 //   - Never touch Xcode.app itself or simulator device state (~/Library/Developer/CoreSimulator/Devices)
 //   - Only target cache/download dirs, not installed toolchains or project source
 
-const path = require('path');
-const fs   = require('fs');
 const { walkDir, totalSize, deleteFiles, dirExists, HOME } = require('./utils');
 
 const TARGETS = [
   // Xcode
   { name: 'Xcode DerivedData',       dir: `${HOME}/Library/Developer/Xcode/DerivedData` },
+  { name: 'Xcode Archives',          dir: `${HOME}/Library/Developer/Xcode/Archives` },
   { name: 'iOS Device Support',      dir: `${HOME}/Library/Developer/Xcode/iOS DeviceSupport` },
   { name: 'watchOS Device Support',  dir: `${HOME}/Library/Developer/Xcode/watchOS DeviceSupport` },
   { name: 'Simulator Caches',        dir: `${HOME}/Library/Developer/CoreSimulator/Caches` },

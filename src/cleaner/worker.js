@@ -2,17 +2,20 @@
 // Keeps the UI responsive by running filesystem work off the main thread.
 const { parentPort } = require('worker_threads');
 
-const cache     = require('./cache');
-const logs      = require('./logs');
-const trash     = require('./trash');
-const browser   = require('./browser');
-const developer = require('./developer');
-const downloads = require('./downloads');
-const system    = require('./system');
-const mail      = require('./mail');
+const cache      = require('./cache');
+const logs       = require('./logs');
+const trash      = require('./trash');
+const browser    = require('./browser');
+const developer  = require('./developer');
+const downloads  = require('./downloads');
+const system     = require('./system');
+const mail       = require('./mail');
+const appsupport = require('./appsupport');
+const simulator  = require('./simulator');
+const imessage   = require('./imessage');
 
 // Registry of available cleaning modules keyed by category name.
-const cleaners = { cache, logs, trash, browser, developer, downloads, system, mail };
+const cleaners = { cache, logs, trash, browser, developer, downloads, system, mail, appsupport, simulator, imessage };
 
 // Run a single category scan.
 async function scanOne(category) {

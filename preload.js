@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('cleanos', {
   // Real disk usage from diskutil (macOS)
   diskInfo: () => ipcRenderer.invoke('disk-info'),
 
+  // iOS-style storage breakdown by category
+  diskBreakdown: () => ipcRenderer.invoke('disk-breakdown'),
+
   // Maintenance tasks
   maintenanceList: () => ipcRenderer.invoke('maintenance-list'),
   maintenanceRun:  (taskId) => ipcRenderer.invoke('maintenance-run', taskId),
