@@ -27,6 +27,12 @@ contextBridge.exposeInMainWorld('cleanos', {
   maintenanceList: () => ipcRenderer.invoke('maintenance-list'),
   maintenanceRun:  (taskId) => ipcRenderer.invoke('maintenance-run', taskId),
 
+  // RAM stats + top processes
+  ramInfo: () => ipcRenderer.invoke('ram-info'),
+
+  // Kill a process by PID (sends SIGTERM)
+  killProcess: (pid) => ipcRenderer.invoke('kill-process', pid),
+
   // macOS Full Disk Access
   checkPermissions:    () => ipcRenderer.invoke('check-permissions'),
   openPrivacySettings: () => ipcRenderer.invoke('open-privacy-settings'),

@@ -176,6 +176,107 @@ ipcMain.handle('open-privacy-settings', () => {
   );
 });
 
+// ── Kill Process ─────────────────────────────────────────────────────────────
+// Send SIGTERM to a user process by PID.
+// Protected PIDs (PID 1, this app) are refused unconditionally.
+const PROTECTED_PIDS = new Set([1, process.pid]);
+
+ipcMain.handle('kill-process', (_event, pid) => {
+  if (!Number.isInteger(pid) || pid <= 0) return { ok: false, error: 'Invalid PID' };
+  if (PROTECTED_PIDS.has(pid)) return { ok: false, error: 'Cannot kill a protected system process' };
+  try {
+    process.kill(pid, 'SIGTERM');
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+// ── RAM Info ─────────────────────────────────────────────────────────────────
+// Returns RAM stats from vm_stat + sysctl, plus top processes from ps.
+ipcMain.handle('ram-info', () => {
+  try {
+    const totalBytes = parseInt(
+      execSync('sysctl -n hw.memsize', { stdio: 'pipe' }).toString().trim(), 10
+    );
+    const pageSize = parseInt(
+      execSync('sysctl -n hw.pagesize', { stdio: 'pipe' }).toString().trim(), 10
+    );
+
+    const vmstat = execSync('vm_stat', { stdio: 'pipe' }).toString();
+    function parseStat(name) {
+      const m = vmstat.match(new RegExp(name + ':\\s+(\\d+)'));
+      return m ? parseInt(m[1], 10) * pageSize : 0;
+    }
+    function parseStatRaw(name) {
+      const m = vmstat.match(new RegExp(name + ':\\s+(\\d+)'));
+      return m ? parseInt(m[1], 10) : 0;
+    }
+
+    const free        = parseStat('Pages free');
+    const active      = parseStat('Pages active');
+    const inactive    = parseStat('Pages inactive');
+    const speculative = parseStat('Pages speculative');
+    const wired       = parseStat('Pages wired down');
+    const compressed  = parseStat('Pages occupied by compressor');
+    const fileBacked  = parseStat('File-backed pages');
+
+    // "Used" mirrors Activity Monitor: App Memory (active anon) + Wired + Compressed.
+    // We approximate: used = total - free - speculative - file-backed - inactive
+    const available = free + speculative + fileBacked + inactive;
+    const used = Math.max(0, totalBytes - available);
+
+    // Pressure: derived from available ratio
+    const availRatio = available / totalBytes;
+    const pressure = availRatio < 0.05 ? 'critical' : availRatio < 0.15 ? 'warning' : 'normal';
+
+    // Top 10 processes by RSS
+    const psOut = execSync(
+      "ps -axo pid=,rss=,comm= 2>/dev/null | sort -k2 -rn | head -10",
+      { stdio: 'pipe', timeout: 8000 }
+    ).toString().trim();
+
+    const topProcesses = psOut.split('\n').filter(Boolean).map(line => {
+      const parts = line.trim().split(/\s+/);
+      const pid     = parseInt(parts[0], 10);
+      const rssKB   = parseInt(parts[1], 10);
+      const name    = parts.slice(2).join(' ');
+      return { pid, name, rssBytes: rssKB * 1024 };
+    }).filter(p => !isNaN(p.rssBytes) && p.rssBytes > 0);
+
+    // Swap usage from sysctl vm.swapusage
+    // Output: "vm.swapusage: total = 2048.00M  used = 512.00M  free = 1536.00M  (encrypted)"
+    let swap = { total: 0, used: 0, free: 0, encrypted: false };
+    try {
+      const swapOut = execSync('sysctl vm.swapusage', { stdio: 'pipe' }).toString();
+      const m = swapOut.match(/total\s*=\s*([\d.]+)([MG])\s+used\s*=\s*([\d.]+)([MG])\s+free\s*=\s*([\d.]+)([MG])/);
+      if (m) {
+        const toBytes = (val, unit) => Math.round(parseFloat(val) * (unit === 'G' ? 1e9 : 1e6));
+        swap.total     = toBytes(m[1], m[2]);
+        swap.used      = toBytes(m[3], m[4]);
+        swap.free      = toBytes(m[5], m[6]);
+        swap.encrypted = /encrypted/i.test(swapOut);
+      }
+    } catch { /* swap unavailable or not active */ }
+
+    // Page fault activity (cumulative since boot) — indicates swap pressure over time
+    const swapins  = parseStatRaw('Swapins');
+    const swapouts = parseStatRaw('Swapouts');
+
+    return {
+      total: totalBytes,
+      used,
+      free: available,
+      pressure,
+      breakdown: { wired, active, compressed, inactive, fileBacked, free },
+      swap: { ...swap, swapins, swapouts },
+      topProcesses,
+    };
+  } catch (err) {
+    return { error: err.message };
+  }
+});
+
 // ── Maintenance ──────────────────────────────────────────────────────────────
 const maintenance = require('./src/cleaner/maintenance');
 

@@ -298,6 +298,56 @@
     .scan-progress { width: min(100%, 240px); }
   }
 
+  /* ── RAM view ────────────────────────────────────────────────────────────── */
+  .ram-overview { display: flex; gap: 28px; margin-bottom: 28px; flex-wrap: wrap; }
+  .ram-ring-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; display: flex; align-items: center; gap: 28px; flex: 1; min-width: 280px; }
+  .ram-pressure { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .pressure-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .pressure-label { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; }
+  .ram-breakdown-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 28px; flex: 1; min-width: 280px; }
+  .ram-breakdown-bar { display: flex; height: 10px; border-radius: 10px; overflow: hidden; gap: 2px; margin: 14px 0 16px; background: var(--surface2); }
+  .ram-seg { border-radius: 10px; min-width: 0; transition: width 1s cubic-bezier(.4,0,.2,1); }
+  .ram-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  .ram-actions { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; align-items: center; }
+  .ram-refresh-btn { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 20px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s; }
+  .ram-refresh-btn:hover:not(:disabled) { border-color: var(--accent2); color: var(--accent2); }
+  .ram-refresh-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .ram-purge-btn { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 20px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s; }
+  .ram-purge-btn:hover:not(:disabled) { background: var(--accent); color: #0b0d11; border-color: var(--accent); }
+  .ram-purge-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .ram-status-line { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-left: 4px; }
+  .proc-table { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .proc-header { display: grid; grid-template-columns: 1fr 120px 80px 44px; padding: 12px 20px; border-bottom: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; }
+  .proc-row { display: grid; grid-template-columns: 1fr 120px 80px 44px; padding: 11px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.15s; }
+  .proc-row:last-child { border-bottom: none; }
+  .proc-row:hover { background: var(--surface2); }
+  .proc-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 12px; }
+  .proc-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .proc-bar { height: 4px; border-radius: 4px; background: var(--accent2); min-width: 2px; transition: width 0.6s ease; }
+  .proc-rss { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); text-align: right; }
+  .swap-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 28px; flex: 1; min-width: 280px; }
+  .swap-bar-wrap { display: flex; height: 8px; border-radius: 8px; overflow: hidden; gap: 2px; background: var(--surface2); margin: 14px 0 16px; }
+  .swap-seg-used { border-radius: 8px; background: var(--accent3); transition: width 1s cubic-bezier(.4,0,.2,1); }
+  .swap-seg-free { border-radius: 8px; background: var(--accent); transition: width 1s cubic-bezier(.4,0,.2,1); }
+  .swap-stats { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 14px; }
+  .swap-stat { display: flex; flex-direction: column; gap: 2px; }
+  .swap-stat-val { font-size: 18px; font-weight: 800; }
+  .swap-stat-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+  .swap-activity { display: flex; gap: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .swap-activity-item { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+  .swap-activity-item strong { color: var(--text); }
+  .swap-healthy { display: flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); margin: 8px 0; }
+  .ram-live-btn { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s; display: flex; align-items: center; gap: 7px; }
+  .ram-live-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .ram-live-btn.active { background: rgba(0,229,160,0.1); border-color: var(--accent); color: var(--accent); }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 0.2s; }
+  .ram-live-btn.active .live-dot { background: var(--accent); animation: livePulse 1.4s ease-in-out infinite; }
+  @keyframes livePulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
+  .proc-kill { background: transparent; border: 1px solid transparent; border-radius: 6px; color: var(--muted); font-size: 13px; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; margin-left: auto; }
+  .proc-kill:hover { background: rgba(255,94,94,0.12); border-color: var(--accent3); color: var(--accent3); }
+  .proc-kill:disabled { opacity: 0.3; cursor: not-allowed; }
+  .proc-row.killing { opacity: 0.4; pointer-events: none; transition: opacity 0.3s; }
+
   /* ── Permission banner ───────────────────────────────────────────────────── */
   .perm-banner { display: none; align-items: center; gap: 16px; background: rgba(255,204,0,0.08); border: 1px solid rgba(255,204,0,0.3); border-radius: var(--radius); padding: 18px 22px; margin-bottom: 24px; }
   .perm-banner.show { display: flex; }
@@ -321,6 +371,7 @@
     <div class="nav-label">Main</div>
     <div class="nav-item active" id="navScan" onclick="showView('scan')"><span class="nav-icon">🧹</span><span>Smart Scan</span></div>
     <div class="nav-item" id="navDiskUsage" onclick="showView('diskUsage')"><span class="nav-icon">💾</span><span>Disk Usage</span></div>
+    <div class="nav-item" id="navRam" onclick="showView('ram')"><span class="nav-icon">🧠</span><span>RAM</span></div>
     <div class="nav-item" id="navStartupApps" onclick="showView('startupApps')"><span class="nav-icon">🚀</span><span>Startup Apps</span></div>
   </div>
   <div class="nav-section">
@@ -421,6 +472,83 @@
       <h1>Disk <span>Usage</span></h1>
       <p>Detailed disk usage insights are coming soon.</p>
       </div>
+    </div>
+  </div>
+</main>
+
+<!-- RAM Optimization view -->
+<main class="main" id="viewRam" style="display:none">
+  <div class="header">
+    <div class="header-tools">
+      <button class="nav-toggle" id="navToggleRam" aria-label="Open navigation" aria-expanded="false" onclick="toggleNavDrawer()">☰</button>
+      <div>
+        <h1>RAM <span>Optimizer</span></h1>
+        <p id="ramLastRefresh">Click Refresh to load memory stats</p>
+      </div>
+    </div>
+    <div class="ram-actions">
+      <button class="ram-refresh-btn" id="ramRefreshBtn" onclick="loadRamInfo()">↺ Refresh</button>
+      <button class="ram-live-btn" id="ramLiveBtn" onclick="toggleAutoRefresh()">
+        <span class="live-dot"></span>Live
+      </button>
+      <button class="ram-purge-btn" id="ramPurgeBtn" onclick="purgeRam()" disabled>⚡ Free Inactive Memory</button>
+      <span class="ram-status-line" id="ramStatusLine"></span>
+    </div>
+  </div>
+
+  <div class="ram-overview">
+    <!-- Usage ring -->
+    <div class="ram-ring-card" id="ramRingCard" style="opacity:0.4">
+      <div class="ring-wrap">
+        <svg class="ring-svg" viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="ramRingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0097ff"/>
+              <stop offset="100%" stop-color="#bf5af2"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-bg" cx="50" cy="50" r="45"/>
+          <circle class="ring-fill" id="ramRingFill" cx="50" cy="50" r="45" style="stroke:url(#ramRingGrad)"/>
+        </svg>
+        <div class="ring-label"><span id="ramPct">—</span><small>used</small></div>
+      </div>
+      <div class="disk-info">
+        <h2>System RAM</h2>
+        <p id="ramSubtext">Refresh to analyze memory</p>
+        <div class="ram-pressure" id="ramPressureWrap">
+          <div class="pressure-dot" id="ramPressureDot" style="background:var(--border)"></div>
+          <span class="pressure-label" id="ramPressureLabel">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breakdown bar -->
+    <div class="ram-breakdown-card" id="ramBreakdownCard" style="opacity:0.4">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">Memory Breakdown</div>
+      <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace">How RAM is currently allocated</div>
+      <div class="ram-breakdown-bar" id="ramBar"></div>
+      <div class="ram-legend" id="ramLegend"></div>
+    </div>
+
+    <!-- Swap usage -->
+    <div class="swap-card" id="swapCard" style="opacity:0.4">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">Virtual Memory / Swap</div>
+      <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace" id="swapSubtext">Disk space used when RAM is full</div>
+      <div id="swapHealthy" class="swap-healthy" style="display:none">● No swap in use — RAM is healthy</div>
+      <div id="swapBarWrap" class="swap-bar-wrap" style="display:none">
+        <div class="swap-seg-used" id="swapSegUsed" style="width:0%"></div>
+        <div class="swap-seg-free" id="swapSegFree" style="width:0%"></div>
+      </div>
+      <div class="swap-stats" id="swapStats"></div>
+      <div class="swap-activity" id="swapActivity"></div>
+    </div>
+  </div>
+
+  <div class="section-title">Top Memory Consumers</div>
+  <div class="proc-table" id="procTable">
+    <div class="proc-header"><span>Process</span><span>Usage</span><span style="text-align:right">RSS</span><span></span></div>
+    <div id="procRows" style="color:var(--muted);font-family:'DM Mono',monospace;font-size:13px;padding:16px 20px">
+      Refresh to load process list…
     </div>
   </div>
 </main>
@@ -1069,10 +1197,286 @@ function dismissResult() {
 // Init dry label
 updateDryLabel();
 
+// ── RAM Optimizer ─────────────────────────────────────────────────────────────
+let ramLoaded = false;
+let ramAutoRefreshInterval = null;
+const RAM_REFRESH_MS = 5000;
+
+// Process names that should never be killed from the UI.
+const PROTECTED_PROC_NAMES = new Set([
+  'kernel_task', 'launchd', 'WindowServer', 'loginwindow',
+  'UserEventAgent', 'cfprefsd', 'distnoted', 'notifyd',
+  'Electron', 'CleanOS',
+]);
+
+async function killProcess(pid, name) {
+  if (!window.cleanos) return;
+  if (!confirm(`Quit "${name}"?\n\nThis sends a quit signal to the process. Unsaved work may be lost.`)) return;
+
+  const btn = document.getElementById(`proc-kill-${pid}`);
+  const row = document.getElementById(`proc-row-${pid}`);
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  if (row) row.classList.add('killing');
+
+  try {
+    const result = await window.cleanos.killProcess(pid);
+    if (result.ok) {
+      // Fade out and remove the row
+      setTimeout(() => { if (row) row.remove(); }, 350);
+      document.getElementById('ramStatusLine').textContent = `✓ "${name}" was quit`;
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = '✕'; }
+      if (row) row.classList.remove('killing');
+      document.getElementById('ramStatusLine').textContent = `✗ ${result.error}`;
+    }
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = '✕'; }
+    if (row) row.classList.remove('killing');
+    document.getElementById('ramStatusLine').textContent = `✗ ${err.message}`;
+  }
+}
+
+const RAM_BREAKDOWN = [
+  { key: 'active',     label: 'App Memory',  color: '#0097ff' },
+  { key: 'wired',      label: 'Wired',       color: '#ffcc00' },
+  { key: 'compressed', label: 'Compressed',  color: '#bf5af2' },
+  { key: 'inactive',   label: 'Inactive',    color: '#6b7490' },
+  { key: 'fileBacked', label: 'Cached',      color: '#00e5a0' },
+  { key: 'free',       label: 'Free',        color: '#1c2030'  },
+];
+
+const PRESSURE_STYLES = {
+  normal:   { color: '#00e5a0', label: 'Normal — plenty of memory available' },
+  warning:  { color: '#ffcc00', label: 'Warning — memory is running low' },
+  critical: { color: '#ff5e5e', label: 'Critical — memory pressure is high' },
+};
+
+function stopAutoRefresh() {
+  if (ramAutoRefreshInterval) {
+    clearInterval(ramAutoRefreshInterval);
+    ramAutoRefreshInterval = null;
+  }
+  const btn = document.getElementById('ramLiveBtn');
+  if (btn) btn.classList.remove('active');
+}
+
+function toggleAutoRefresh() {
+  if (ramAutoRefreshInterval) {
+    stopAutoRefresh();
+    document.getElementById('ramStatusLine').textContent = 'Live updates paused';
+    return;
+  }
+  const btn = document.getElementById('ramLiveBtn');
+  if (btn) btn.classList.add('active');
+  loadRamInfo();
+  ramAutoRefreshInterval = setInterval(() => loadRamInfo(true), RAM_REFRESH_MS);
+}
+
+function initRam() {
+  if (ramLoaded) return;
+  loadRamInfo();
+}
+
+function renderSwap(swap) {
+  const card      = document.getElementById('swapCard');
+  const healthy   = document.getElementById('swapHealthy');
+  const barWrap   = document.getElementById('swapBarWrap');
+  const segUsed   = document.getElementById('swapSegUsed');
+  const segFree   = document.getElementById('swapSegFree');
+  const stats     = document.getElementById('swapStats');
+  const activity  = document.getElementById('swapActivity');
+  const subtext   = document.getElementById('swapSubtext');
+  if (!card) return;
+
+  card.style.opacity = '1';
+
+  const noSwap = !swap.total || swap.used === 0;
+
+  if (noSwap) {
+    healthy.style.display = 'flex';
+    barWrap.style.display = 'none';
+    stats.innerHTML = '';
+    subtext.textContent = 'Disk space used when RAM is full';
+    activity.innerHTML = swap.swapins != null
+      ? `<div class="swap-activity-item">Swapins: <strong>${(swap.swapins || 0).toLocaleString()}</strong></div>
+         <div class="swap-activity-item">Swapouts: <strong>${(swap.swapouts || 0).toLocaleString()}</strong></div>
+         <div class="swap-activity-item" style="color:var(--muted);font-size:11px">cumulative since boot</div>`
+      : '';
+    return;
+  }
+
+  healthy.style.display = 'none';
+  barWrap.style.display = 'flex';
+
+  const usedPct = (swap.used / swap.total) * 100;
+  const freePct = 100 - usedPct;
+  subtext.textContent = swap.encrypted ? 'Disk space used when RAM is full — encrypted' : 'Disk space used when RAM is full';
+
+  setTimeout(() => {
+    segUsed.style.width = usedPct.toFixed(1) + '%';
+    segFree.style.width = freePct.toFixed(1) + '%';
+  }, 100);
+
+  const usedColor = usedPct > 80 ? 'var(--accent3)' : usedPct > 50 ? 'var(--accent4)' : 'var(--text)';
+  stats.innerHTML = `
+    <div class="swap-stat"><div class="swap-stat-val" style="color:${usedColor}">${formatBytes(swap.used)}</div><div class="swap-stat-label">Used</div></div>
+    <div class="swap-stat"><div class="swap-stat-val" style="color:var(--accent)">${formatBytes(swap.free)}</div><div class="swap-stat-label">Free</div></div>
+    <div class="swap-stat"><div class="swap-stat-val">${formatBytes(swap.total)}</div><div class="swap-stat-label">Total</div></div>
+  `;
+
+  activity.innerHTML = `
+    <div class="swap-activity-item">Swapins: <strong>${(swap.swapins || 0).toLocaleString()}</strong></div>
+    <div class="swap-activity-item">Swapouts: <strong>${(swap.swapouts || 0).toLocaleString()}</strong></div>
+    <div class="swap-activity-item" style="color:var(--muted);font-size:11px">cumulative since boot</div>
+  `;
+}
+
+async function loadRamInfo(silent = false) {
+  if (!window.cleanos || typeof window.cleanos.ramInfo !== 'function') {
+    document.getElementById('ramStatusLine').textContent = 'IPC bridge not available';
+    return;
+  }
+
+  const refreshBtn = document.getElementById('ramRefreshBtn');
+  const purgeBtn   = document.getElementById('ramPurgeBtn');
+  if (!silent) {
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = '⏳ Loading…';
+    document.getElementById('ramStatusLine').textContent = '';
+  }
+
+  let data;
+  try {
+    data = await window.cleanos.ramInfo();
+  } catch (err) {
+    if (!silent) {
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = '↺ Refresh';
+      document.getElementById('ramStatusLine').textContent = 'Error: ' + err.message;
+    }
+    return;
+  }
+
+  if (!silent) {
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = '↺ Refresh';
+  }
+
+  if (data.error) {
+    document.getElementById('ramStatusLine').textContent = 'Error: ' + data.error;
+    return;
+  }
+
+  ramLoaded = true;
+  purgeBtn.disabled = false;
+  const liveActive = !!ramAutoRefreshInterval;
+  document.getElementById('ramLastRefresh').textContent =
+    (liveActive ? '● Live — ' : 'Last refresh: ') + new Date().toLocaleTimeString();
+
+  // Ring
+  const usedPct = Math.round((data.used / data.total) * 100);
+  document.getElementById('ramRingCard').style.opacity = '1';
+  document.getElementById('ramPct').textContent = usedPct + '%';
+  document.getElementById('ramSubtext').textContent =
+    formatBytes(data.used) + ' used of ' + formatBytes(data.total) +
+    ' — ' + formatBytes(data.free) + ' available';
+  setTimeout(() => {
+    document.getElementById('ramRingFill').style.strokeDashoffset = 283 * (1 - usedPct / 100);
+  }, 80);
+
+  // Pressure
+  const ps = PRESSURE_STYLES[data.pressure] || PRESSURE_STYLES.normal;
+  document.getElementById('ramPressureDot').style.background = ps.color;
+  document.getElementById('ramPressureLabel').textContent = ps.label;
+  document.getElementById('ramPressureLabel').style.color = ps.color;
+
+  // Breakdown bar + legend
+  document.getElementById('ramBreakdownCard').style.opacity = '1';
+  const bar    = document.getElementById('ramBar');
+  const legend = document.getElementById('ramLegend');
+  const bd     = data.breakdown || {};
+
+  bar.innerHTML = RAM_BREAKDOWN.map(({ key, color }) => {
+    const pct = ((bd[key] || 0) / data.total * 100);
+    return pct >= 0.5
+      ? `<div class="ram-seg" style="background:${color};width:0%" data-pct="${pct.toFixed(2)}"></div>`
+      : '';
+  }).join('');
+  setTimeout(() => {
+    bar.querySelectorAll('.ram-seg').forEach(el => { el.style.width = el.dataset.pct + '%'; });
+  }, 100);
+
+  legend.innerHTML = RAM_BREAKDOWN.map(({ key, label, color }) => {
+    const bytes = bd[key] || 0;
+    if (bytes < 10 * 1024 * 1024) return '';
+    return `<div class="legend-item">
+      <div class="legend-dot" style="background:${color}"></div>
+      <span>${label}</span><span class="legend-size">${formatBytes(bytes)}</span>
+    </div>`;
+  }).join('');
+
+  // Swap card
+  renderSwap(data.swap || {});
+
+  // Process list
+  const procRows = document.getElementById('procRows');
+  const procs = data.topProcesses || [];
+  if (procs.length === 0) {
+    procRows.innerHTML = '<div style="padding:14px 0;color:var(--muted)">No process data available</div>';
+    return;
+  }
+  const maxRss = procs[0].rssBytes || 1;
+  procRows.innerHTML = procs.map(p => {
+    const barPct   = Math.round((p.rssBytes / maxRss) * 100);
+    const safeName = p.name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const killable = !PROTECTED_PROC_NAMES.has(p.name);
+    return `<div class="proc-row" id="proc-row-${p.pid}">
+      <div class="proc-name">${safeName}</div>
+      <div class="proc-bar-wrap">
+        <div class="proc-bar" style="width:0%" data-pct="${barPct}"></div>
+      </div>
+      <div class="proc-rss">${formatBytes(p.rssBytes)}</div>
+      <button class="proc-kill" id="proc-kill-${p.pid}"
+        ${killable ? `onclick="killProcess(${p.pid}, '${safeName}')"` : 'disabled title="System process"'}
+        title="${killable ? 'Quit ' + safeName : 'System process — cannot kill'}">✕</button>
+    </div>`;
+  }).join('');
+  setTimeout(() => {
+    procRows.querySelectorAll('.proc-bar').forEach(el => { el.style.width = el.dataset.pct + '%'; });
+  }, 100);
+}
+
+async function purgeRam() {
+  if (!window.cleanos) return;
+  const purgeBtn = document.getElementById('ramPurgeBtn');
+  const statusLine = document.getElementById('ramStatusLine');
+
+  purgeBtn.disabled = true;
+  purgeBtn.textContent = '⏳ Purging…';
+  statusLine.textContent = 'Requesting admin password…';
+
+  try {
+    const result = await window.cleanos.maintenanceRun('purge-memory');
+    statusLine.textContent = result.ok
+      ? '✓ Inactive memory freed — refreshing…'
+      : '✗ ' + (result.error || 'Failed');
+    if (result.ok) {
+      ramLoaded = false;
+      await loadRamInfo();
+    }
+  } catch (err) {
+    statusLine.textContent = '✗ ' + err.message;
+  }
+
+  purgeBtn.disabled = false;
+  purgeBtn.textContent = '⚡ Free Inactive Memory';
+}
+
 // ── View switching ────────────────────────────────────────────────────────────
 const VIEWS = {
   scan: 'navScan',
   diskUsage: 'navDiskUsage',
+  ram: 'navRam',
   startupApps: 'navStartupApps',
   maintenance: 'navMaintenance',
   privacy: 'navPrivacy',
@@ -1083,6 +1487,7 @@ const VIEWS = {
 const VIEW_PANELS = {
   scan: 'viewScan',
   diskUsage: 'viewDiskUsage',
+  ram: 'viewRam',
   startupApps: 'viewStartupApps',
   maintenance: 'viewMaintenance',
   privacy: 'viewPrivacy',
@@ -1111,8 +1516,10 @@ function showView(name) {
   if (name !== 'scan') document.getElementById('actionBar').classList.remove('visible');
   else updateActionBar();
 
+  if (name !== 'ram') stopAutoRefresh();
   if (name === 'maintenance') initMaintenance();
   if (name === 'trashBins') initTrashBins();
+  if (name === 'ram') initRam();
 }
 
 // ── Maintenance ───────────────────────────────────────────────────────────────
