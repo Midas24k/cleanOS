@@ -118,7 +118,7 @@ async function clean({ dryRun = true } = {}) {
     catch { return false; }
   });
 
-  const { deleted, deletedBytes, failed } = deleteFiles(writable);
+  const { deleted, deletedBytes, failed } = await deleteFiles(writable);
   return {
     dryRun: false,
     deleted,

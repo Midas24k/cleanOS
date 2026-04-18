@@ -83,7 +83,7 @@ async function clean({ dryRun = true } = {}) {
     };
   } catch {
     // xcrun unavailable — fall back to manual file deletion
-    const { deleted, deletedBytes, failed } = deleteFiles(paths);
+    const { deleted, deletedBytes, failed } = await deleteFiles(paths);
     return { dryRun: false, deleted, freedBytes: deletedBytes, failed };
   }
 }

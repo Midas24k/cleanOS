@@ -17,6 +17,46 @@ const imessage   = require('./imessage');
 // Registry of available cleaning modules keyed by category name.
 const cleaners = { cache, logs, trash, browser, developer, downloads, system, mail, appsupport, simulator, imessage };
 
+// Maximum number of category scans running at the same time.
+// 4 keeps disk I/O busy without creating a queue of 11 competing traversals.
+const SCAN_CONCURRENCY = 4;
+
+// Per-category scan timeout — prevents one slow/hung directory from
+// blocking the whole scan indefinitely.
+const SCAN_TIMEOUT_MS = 30_000;
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
+// Run async tasks over `items` with at most `limit` in flight at once.
+// Preserves no particular order — first available slot takes the next item.
+async function concurrentMap(items, fn, limit) {
+  let i = 0;
+  async function worker() {
+    while (i < items.length) {
+      const item = items[i++];
+      await fn(item);
+    }
+  }
+  const poolSize = Math.min(limit, items.length || 1);
+  await Promise.all(Array.from({ length: poolSize }, worker));
+}
+
+// Reject with a timeout error if `promise` doesn't settle within `ms`.
+function withTimeout(promise, ms, label) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(
+      () => reject(new Error(`${label} scan timed out after ${ms / 1000}s`)),
+      ms,
+    );
+    promise.then(
+      v => { clearTimeout(t); resolve(v); },
+      e => { clearTimeout(t); reject(e); },
+    );
+  });
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
 // Run a single category scan.
 async function scanOne(category) {
   const mod = cleaners[category];
@@ -24,22 +64,23 @@ async function scanOne(category) {
   return mod.scan();
 }
 
-// Scan all categories in parallel and return a map of results.
+// Scan all categories with bounded concurrency and per-category timeouts.
 async function scanAll() {
+  const entries = Object.entries(cleaners);
   const results = {};
-  await Promise.all(
-    Object.entries(cleaners).map(async ([key, mod]) => {
-      try {
-        results[key] = await mod.scan();
-      } catch (err) {
-        results[key] = { sizeBytes: 0, fileCount: 0, paths: [], error: err.message };
-      }
-    })
-  );
+
+  await concurrentMap(entries, async ([key, mod]) => {
+    try {
+      results[key] = await withTimeout(mod.scan(), SCAN_TIMEOUT_MS, key);
+    } catch (err) {
+      results[key] = { sizeBytes: 0, fileCount: 0, paths: [], error: err.message };
+    }
+  }, SCAN_CONCURRENCY);
+
   return results;
 }
 
-// Clean the selected categories sequentially to reduce disk contention.
+// Clean the selected categories sequentially to reduce disk contention during writes.
 async function cleanMany(categories, opts = { dryRun: true }) {
   const results = {};
   for (const key of categories || []) {
@@ -54,7 +95,8 @@ async function cleanMany(categories, opts = { dryRun: true }) {
   return results;
 }
 
-// Create a human-friendly label for error reporting.
+// ── Message handler ───────────────────────────────────────────────────────────
+
 function describeAction(msg) {
   if (!msg || !msg.action) return 'unknown action';
   if (msg.action === 'scan') return `scan(${msg.category || 'unknown'})`;

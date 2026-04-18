@@ -17,7 +17,8 @@
     --sidebar-width: 220px; --sidebar-drawer-width: 280px;
   }
   body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; overflow: hidden; -webkit-app-region: drag; }
-  button, select, input, label { -webkit-app-region: no-drag; }
+  button, select, input, label, a { -webkit-app-region: no-drag; }
+  .main, .result-detail, .trash-preview, .sidebar { -webkit-app-region: no-drag; }
 
   /* Sidebar + nav */
   .nav-backdrop { display: none; }
@@ -51,16 +52,17 @@
     overflow-x: hidden;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
-    scrollbar-color: var(--border) var(--surface);
+    scrollbar-color: #4a5270 var(--surface);
     padding: 36px 40px 100px;
   }
-  .main::-webkit-scrollbar { width: 10px; }
-  .main::-webkit-scrollbar-track { background: var(--surface); }
+  .main::-webkit-scrollbar { width: 8px; }
+  .main::-webkit-scrollbar-track { background: var(--surface); border-radius: 999px; }
   .main::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, var(--border), #323a4f);
+    background: #4a5270;
     border-radius: 999px;
     border: 2px solid var(--surface);
   }
+  .main::-webkit-scrollbar-thumb:hover { background: #6b7490; }
 
   .result-detail,
   .trash-preview {
@@ -298,6 +300,46 @@
     .scan-progress { width: min(100%, 240px); }
   }
 
+  /* ── Risk badges (on scan cards) ────────────────────────────────────────── */
+  .risk-badge { font-size: 9px; font-family: 'DM Mono', monospace; padding: 2px 7px; border-radius: 20px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; flex-shrink: 0; }
+  .risk-safe       { background: rgba(0,229,160,0.12);  color: var(--accent); }
+  .risk-moderate   { background: rgba(255,204,0,0.12);  color: var(--accent4); }
+  .risk-aggressive { background: rgba(255,94,94,0.15);  color: var(--accent3); }
+
+  /* ── Confirmation modal ──────────────────────────────────────────────────── */
+  .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(11,13,17,0.92); backdrop-filter: blur(10px); z-index: 350; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; -webkit-app-region: no-drag; }
+  .confirm-overlay.show { display: flex; }
+  .confirm-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 540px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 32px 80px rgba(0,0,0,0.5); flex-shrink: 0; }
+  .confirm-header { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .confirm-title { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+  .confirm-subtitle { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 4px; line-height: 1.5; }
+  .confirm-body { padding: 4px 24px 12px; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--border) transparent; -webkit-app-region: no-drag; min-height: 0; }
+  .confirm-body::-webkit-scrollbar { width: 6px; }
+  .confirm-body::-webkit-scrollbar-track { background: transparent; }
+  .confirm-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+  .confirm-tier-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 12px 0 6px; display: flex; align-items: center; gap: 8px; }
+  .confirm-tier-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .confirm-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .confirm-row:last-child { border-bottom: none; }
+  .confirm-row-icon { font-size: 20px; flex-shrink: 0; line-height: 1; margin-top: 1px; }
+  .confirm-row-body { flex: 1; min-width: 0; }
+  .confirm-row-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .confirm-row-note { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; line-height: 1.5; }
+  .confirm-row-size { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); white-space: nowrap; padding-top: 2px; flex-shrink: 0; text-align: right; }
+  .confirm-ack { display: flex; align-items: flex-start; gap: 10px; margin-top: 8px; padding: 9px 12px; background: rgba(255,94,94,0.07); border: 1px solid rgba(255,94,94,0.25); border-radius: 8px; cursor: pointer; user-select: none; font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text); line-height: 1.5; -webkit-app-region: no-drag; }
+  .confirm-ack input[type="checkbox"] { margin-top: 2px; accent-color: var(--accent3); cursor: pointer; flex-shrink: 0; width: 14px; height: 14px; }
+  .confirm-footer { padding: 14px 24px 18px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .confirm-total { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .confirm-total strong { color: var(--text); font-size: 16px; }
+  .confirm-perm-warning { display: flex; align-items: flex-start; gap: 10px; background: rgba(255,94,94,0.06); border: 1px solid rgba(255,94,94,0.2); border-radius: 10px; padding: 10px 13px; margin-bottom: 14px; font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); line-height: 1.55; }
+  .confirm-perm-warning-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .confirm-buttons { display: flex; gap: 10px; justify-content: flex-end; }
+  .btn-confirm-cancel { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 10px 20px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s; }
+  .btn-confirm-cancel:hover { border-color: var(--muted); color: var(--text); }
+  .btn-confirm-delete { background: var(--accent3); color: white; border: none; border-radius: 10px; padding: 10px 22px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-confirm-delete:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,94,94,0.35); }
+  .btn-confirm-delete:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
   /* ── RAM view ────────────────────────────────────────────────────────────── */
   .ram-overview { display: flex; gap: 28px; margin-bottom: 28px; flex-wrap: wrap; }
   .ram-ring-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; display: flex; align-items: center; gap: 28px; flex: 1; min-width: 280px; }
@@ -357,6 +399,20 @@
   .perm-text span { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; line-height: 1.5; }
   .btn-perm { background: var(--accent4); color: #0b0d11; border: none; border-radius: 10px; padding: 10px 18px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; flex-shrink: 0; }
   .btn-perm:hover { opacity: 0.85; }
+
+  /* Schedule view */
+  .sched-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0 24px; max-width: 560px; }
+  .sched-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; }
+  .sched-label { font-size: 14px; font-weight: 600; color: var(--text); }
+  .sched-sublabel { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 3px; }
+  .sched-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+  .sched-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; padding: 8px 12px; cursor: pointer; outline: none; }
+  .sched-select:focus { border-color: var(--accent); }
+  .sched-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; max-width: 560px; margin-top: 4px; }
+  .sched-result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .sched-result-cat { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 6px; }
+  .sched-result-size { font-size: 22px; font-weight: 800; color: var(--accent); }
+  .sched-result-files { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -380,6 +436,7 @@
     <div class="nav-item" id="navPrivacy" onclick="showView('privacy')"><span class="nav-icon">🔐</span><span>Privacy</span></div>
     <div class="nav-item" id="navTrashBins" onclick="showView('trashBins')"><span class="nav-icon">🗑️</span><span>Trash Bins</span></div>
     <div class="nav-item" id="navExtensions" onclick="showView('extensions')"><span class="nav-icon">📦</span><span>Extensions</span></div>
+    <div class="nav-item" id="navSchedule" onclick="showView('schedule')"><span class="nav-icon">⏰</span><span>Schedule</span></div>
   </div>
   <div class="sidebar-footer">
     <div class="dry-label">Clean Mode</div>
@@ -648,6 +705,61 @@
   </div>
 </main>
 
+<!-- Schedule view -->
+<main class="main" id="viewSchedule" style="display:none">
+  <div class="header">
+    <div class="header-tools">
+      <button class="nav-toggle" aria-label="Open navigation" aria-expanded="false" onclick="toggleNavDrawer()">☰</button>
+      <div>
+        <h1>Auto <span>Schedule</span></h1>
+        <p>Run scans automatically on a set interval</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sched-card">
+    <div class="sched-row">
+      <div>
+        <div class="sched-label">Auto-Scan</div>
+        <div class="sched-sublabel">Automatically scan your system on a schedule</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="schedEnabled" onchange="onSchedChange()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="sched-divider"></div>
+
+    <div class="sched-row">
+      <div class="sched-label">Scan Interval</div>
+      <select class="sched-select" id="schedInterval" onchange="onSchedChange()">
+        <option value="1">Every hour</option>
+        <option value="6">Every 6 hours</option>
+        <option value="12">Every 12 hours</option>
+        <option value="24" selected>Every 24 hours</option>
+        <option value="168">Every week</option>
+      </select>
+    </div>
+
+    <div class="sched-divider"></div>
+
+    <div class="sched-row">
+      <div>
+        <div class="sched-label">Last Scan</div>
+        <div class="sched-sublabel" id="schedLastRun">Never</div>
+      </div>
+      <div style="text-align:right">
+        <div class="sched-label">Next Scan</div>
+        <div class="sched-sublabel" id="schedNextRun">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title" id="schedResultTitle" style="display:none">Last Scan Results</div>
+  <div class="sched-results" id="schedResults"></div>
+</main>
+
 <!-- Sticky action bar for bulk clean actions -->
 <div class="action-bar" id="actionBar">
   <div class="action-summary">
@@ -660,6 +772,28 @@
     <button class="btn-deselect" id="selectAllBtn" onclick="selectAll()">Select All</button>
     <button class="btn-deselect" id="deselectAllBtn" onclick="deselectAll()">Deselect All</button>
     <button class="btn-clean" id="cleanBtn" onclick="runClean()">🧹 Clean Now</button>
+  </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-modal">
+    <div class="confirm-header">
+      <div class="confirm-title">✋ Review Before Deleting</div>
+      <div class="confirm-subtitle" id="confirmSubtitle"></div>
+    </div>
+    <div class="confirm-body" id="confirmBody"></div>
+    <div class="confirm-footer">
+      <div class="confirm-total" id="confirmTotal"></div>
+      <div class="confirm-perm-warning">
+        <span class="confirm-perm-warning-icon">⚠️</span>
+        <span>Deletions are <strong>permanent</strong>. Files cannot be recovered after cleaning. Run a dry-run preview first if you are unsure what will be removed.</span>
+      </div>
+      <div class="confirm-buttons">
+        <button class="btn-confirm-cancel" onclick="closeConfirmModal()">Cancel</button>
+        <button class="btn-confirm-delete" id="confirmDeleteBtn" onclick="confirmAndClean()" disabled>Delete Permanently</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -839,17 +973,17 @@ function updateDryLabel() {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const CATEGORY_META = {
-  cache:     { icon: '⚡', name: 'System Cache',    desc: 'App & container cache files',       color: '#0097ff' },
-  logs:      { icon: '📋', name: 'Log Files',        desc: 'Crash reports & diagnostic logs',   color: '#ffcc00' },
-  trash:     { icon: '🗑️', name: 'Trash',            desc: 'All system trash bins',              color: '#ff5e5e' },
-  browser:   { icon: '🌍', name: 'Browser Data',     desc: 'Chrome, Firefox, Safari & more',    color: '#00e5a0' },
-  developer: { icon: '🛠️', name: 'Developer Tools',  desc: 'Xcode, npm, Homebrew, pip caches',       color: '#bf5af2' },
-  downloads: { icon: '📥', name: 'Large Downloads',  desc: 'Files >50 MB older than 30 days',        color: '#ff9f0a' },
-  system:    { icon: '🖥️', name: 'System Data',      desc: 'Temp files & Time Machine snapshots',   color: '#ff6b6b' },
-  mail:      { icon: '✉️',  name: 'Mail Attachments', desc: 'Cached attachments & mail downloads',   color: '#5ac8fa' },
-  appsupport: { icon: '🗂️', name: 'App Support',      desc: 'Orphaned app data & cache files in Application Support', color: '#ff6b9d' },
-  simulator:  { icon: '📱', name: 'iOS Simulators',   desc: 'Unavailable simulator device records',                   color: '#30d158' },
-  imessage:   { icon: '💬', name: 'iMessage',          desc: 'Shared photos, videos & attachments — re-downloads if iCloud Messages is on', color: '#0a84ff' },
+  cache:      { icon: '⚡', name: 'System Cache',    desc: 'App & container cache files',                                                    color: '#0097ff', risk: 'safe',       riskNote: 'Regenerated automatically by apps — no data loss.' },
+  logs:       { icon: '📋', name: 'Log Files',        desc: 'Crash reports & diagnostic logs',                                               color: '#ffcc00', risk: 'safe',       riskNote: 'Diagnostic files only — no user data involved.' },
+  trash:      { icon: '🗑️', name: 'Trash',            desc: 'All system trash bins',                                                          color: '#ff5e5e', risk: 'safe',       riskNote: 'You already chose to delete these when you moved them to Trash.' },
+  browser:    { icon: '🌍', name: 'Browser Data',     desc: 'Chrome, Firefox, Safari & more',                                                color: '#00e5a0', risk: 'safe',       riskNote: 'Browsing cache only — passwords, bookmarks and history are untouched.' },
+  simulator:  { icon: '📱', name: 'iOS Simulators',   desc: 'Unavailable simulator device records',                                          color: '#30d158', risk: 'safe',       riskNote: 'Only removes unavailable device records — active simulators are untouched.' },
+  developer:  { icon: '🛠️', name: 'Developer Tools',  desc: 'Xcode, npm, Homebrew, pip caches',                                              color: '#bf5af2', risk: 'moderate',   riskNote: 'Build caches rebuilt automatically. DerivedData deletion may slow first builds.' },
+  downloads:  { icon: '📥', name: 'Large Downloads',  desc: 'Files >50 MB older than 30 days',                                               color: '#ff9f0a', risk: 'moderate',   riskNote: 'Verify you no longer need these files — they cannot be recovered after deletion.' },
+  system:     { icon: '🖥️', name: 'System Data',      desc: 'Temp files & Time Machine snapshots',                                           color: '#ff6b6b', risk: 'moderate',   riskNote: 'Temp files are safe. Time Machine snapshots are re-created automatically.' },
+  appsupport: { icon: '🗂️', name: 'App Support',      desc: 'Orphaned app data & cache files in Application Support',                        color: '#ff6b9d', risk: 'moderate',   riskNote: 'Targets orphaned data only, but some apps may lose cached state or preferences.' },
+  mail:       { icon: '✉️',  name: 'Mail Attachments', desc: 'Cached attachments & mail downloads',                                           color: '#5ac8fa', risk: 'aggressive', riskNote: 'Attachments are permanently deleted. They will re-download from the mail server, but this can be slow on large mailboxes.' },
+  imessage:   { icon: '💬', name: 'iMessage',          desc: 'Shared photos, videos & attachments — re-downloads if iCloud Messages is on',   color: '#0a84ff', risk: 'aggressive', riskNote: 'Media files are permanently deleted. Re-download from iCloud requires iCloud Messages to be enabled and can take a long time on large libraries.' },
 };
 
 let scanData      = {};  // { cache: {sizeBytes, fileCount}, ... }
@@ -958,11 +1092,19 @@ function renderCards() {
     const card = document.createElement('div');
     card.className = 'cat-card' + (selected.has(id) ? ' selected' : '');
     card.dataset.id = id;
+    const riskLabel = { safe: 'Safe', moderate: 'Moderate', aggressive: 'Aggressive' }[meta.risk] || '';
+    const riskClass = meta.risk ? `risk-${meta.risk}` : '';
     card.innerHTML = `
       <div class="checkbox"></div>
       <div class="cat-top">
         <span class="cat-icon">${meta.icon}</span>
-        <div><div class="cat-name">${meta.name}</div><div class="cat-desc">${meta.desc}</div></div>
+        <div>
+          <div class="cat-name" style="display:flex;align-items:center;gap:8px">
+            ${meta.name}
+            ${riskClass ? `<span class="risk-badge ${riskClass}">${riskLabel}</span>` : ''}
+          </div>
+          <div class="cat-desc">${meta.desc}</div>
+        </div>
       </div>
       <div class="cat-size" style="color:${meta.color}">${formatBytes(data.sizeBytes || 0)}</div>
       <div class="cat-count">${(data.fileCount || 0).toLocaleString()} files${data.error ? ' ⚠ ' + data.error : ''}</div>
@@ -1133,13 +1275,96 @@ function updateActionBar() {
 }
 
 // ── Clean ─────────────────────────────────────────────────────────────────────
-// Clean the selected categories (dry-run or real).
-// Clean the selected categories (dry-run or real).
-async function runClean() {
+
+// Gatekeeper: dry-run goes straight through; real deletes open the confirm modal.
+function runClean() {
   if (!scanned || selected.size === 0) return;
   if (!window.cleanos) { showError('IPC bridge not found'); return; }
+  if (isDryRun()) {
+    executeClean(true);
+  } else {
+    openConfirmModal();
+  }
+}
 
-  const dry = isDryRun();
+// Build and open the confirmation modal for real deletes.
+function openConfirmModal() {
+  const TIERS = ['safe', 'moderate', 'aggressive'];
+  const TIER_LABELS = { safe: '✅ Safe', moderate: '⚠️ Moderate', aggressive: '🔴 Aggressive — requires confirmation' };
+
+  // Group selected categories by risk tier.
+  const grouped = { safe: [], moderate: [], aggressive: [] };
+  for (const id of selected) {
+    const meta = CATEGORY_META[id] || { risk: 'moderate' };
+    const tier = meta.risk || 'moderate';
+    if (grouped[tier]) grouped[tier].push(id);
+  }
+
+  const totalBytes  = [...selected].reduce((s, id) => s + (scanData[id]?.sizeBytes  || 0), 0);
+  const totalFiles  = [...selected].reduce((s, id) => s + (scanData[id]?.fileCount  || 0), 0);
+  const aggressiveCount = grouped.aggressive.length;
+
+  // Subtitle
+  document.getElementById('confirmSubtitle').textContent =
+    `${selected.size} categor${selected.size === 1 ? 'y' : 'ies'} selected · ${formatBytes(totalBytes)} · ${totalFiles.toLocaleString()} files`;
+
+  // Build body HTML
+  let bodyHTML = '';
+  for (const tier of TIERS) {
+    const ids = grouped[tier];
+    if (!ids.length) continue;
+    bodyHTML += `<div class="confirm-tier-label">${TIER_LABELS[tier]}</div>`;
+    for (const id of ids) {
+      const meta = CATEGORY_META[id] || { icon: '📁', name: id, riskNote: '' };
+      const data = scanData[id] || {};
+      const ackId = `ack-${id}`;
+      bodyHTML += `
+        <div class="confirm-row">
+          <div class="confirm-row-icon">${meta.icon}</div>
+          <div class="confirm-row-body">
+            <div class="confirm-row-name">${meta.name}</div>
+            <div class="confirm-row-note">${meta.riskNote || ''}</div>
+            ${tier === 'aggressive' ? `
+              <label class="confirm-ack">
+                <input type="checkbox" id="${ackId}" onchange="updateConfirmButton()">
+                <span>I understand these files will be permanently deleted and cannot be recovered.</span>
+              </label>` : ''}
+          </div>
+          <div class="confirm-row-size">${formatBytes(data.sizeBytes || 0)}<br><span style="font-size:10px">${(data.fileCount || 0).toLocaleString()} files</span></div>
+        </div>`;
+    }
+  }
+  document.getElementById('confirmBody').innerHTML = bodyHTML;
+
+  // Footer total
+  document.getElementById('confirmTotal').innerHTML =
+    `Total: <strong>${formatBytes(totalBytes)}</strong> across ${totalFiles.toLocaleString()} files`;
+
+  // Delete button starts disabled if there are aggressive categories (checkboxes unchecked)
+  document.getElementById('confirmDeleteBtn').disabled = aggressiveCount > 0;
+
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+
+// Re-evaluate whether the confirm button can be enabled.
+function updateConfirmButton() {
+  const allChecked = [...document.querySelectorAll('#confirmBody input[type="checkbox"]')]
+    .every(cb => cb.checked);
+  document.getElementById('confirmDeleteBtn').disabled = !allChecked;
+}
+
+// Called when user clicks "Delete Permanently" in the modal.
+function confirmAndClean() {
+  closeConfirmModal();
+  executeClean(false);
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirmOverlay').classList.remove('show');
+}
+
+// Perform the actual IPC clean call and show the result overlay.
+async function executeClean(dry) {
   document.getElementById('cleanBtn').disabled = true;
   document.getElementById('cleanBtn').textContent = dry ? '🔍 Previewing…' : '🧹 Cleaning…';
 
@@ -1154,7 +1379,7 @@ async function runClean() {
   }
 
   // Build result summary
-  let totalFreed = 0;
+  let totalFreed   = 0;
   let totalDeleted = 0;
   const lines = [];
 
@@ -1163,25 +1388,28 @@ async function runClean() {
     if (dry) {
       totalFreed   += r.wouldFreeBytes || 0;
       totalDeleted += r.wouldDelete    || 0;
-      lines.push(`${meta.name}: ${formatBytes(r.wouldFreeBytes || 0)} across ${(r.wouldDelete||0).toLocaleString()} files`);
+      lines.push(`${meta.name}: ${formatBytes(r.wouldFreeBytes || 0)} across ${(r.wouldDelete || 0).toLocaleString()} files`);
     } else {
       totalFreed   += r.freedBytes || 0;
       totalDeleted += r.deleted    || 0;
       const failNote = r.failed?.length ? ` (${r.failed.length} skipped)` : '';
-      lines.push(`${meta.name}: ${formatBytes(r.freedBytes || 0)} freed${failNote}`);
+      lines.push(`${meta.name}: ${formatBytes(r.freedBytes || 0)} permanently deleted${failNote}`);
     }
     if (r.error) lines.push(`  ⚠ ${r.error}`);
   }
 
-  const overlay   = document.getElementById('resultOverlay');
   document.getElementById('resultIcon').textContent  = dry ? '🔍' : '✅';
-  document.getElementById('resultTitle').textContent = dry ? 'Preview — Dry Run' : 'All Clean!';
+  document.getElementById('resultTitle').textContent = dry ? 'Dry Run Preview' : 'Clean Complete';
   document.getElementById('resultSaved').textContent = formatBytes(totalFreed);
   document.getElementById('resultSub').textContent   = dry
-    ? `would be freed from ${totalDeleted.toLocaleString()} files (nothing deleted)`
-    : `freed from ${totalDeleted.toLocaleString()} files`;
+    ? `would be freed from ${totalDeleted.toLocaleString()} files — nothing was deleted`
+    : `permanently deleted from ${totalDeleted.toLocaleString()} files`;
   document.getElementById('resultDetail').innerHTML  = lines.map(l => `<p>${l}</p>`).join('');
-  overlay.classList.add('show');
+  if (!dry) {
+    document.getElementById('resultDetail').innerHTML +=
+      '<p style="margin-top:10px;color:var(--accent3);font-size:11px">⚠ These files have been permanently removed and cannot be recovered.</p>';
+  }
+  document.getElementById('resultOverlay').classList.add('show');
 
   document.getElementById('cleanBtn').disabled = false;
   updateDryLabel();
@@ -1482,6 +1710,7 @@ const VIEWS = {
   privacy: 'navPrivacy',
   trashBins: 'navTrashBins',
   extensions: 'navExtensions',
+  schedule: 'navSchedule',
 };
 
 const VIEW_PANELS = {
@@ -1493,6 +1722,7 @@ const VIEW_PANELS = {
   privacy: 'viewPrivacy',
   trashBins: 'viewTrashBins',
   extensions: 'viewExtensions',
+  schedule: 'viewSchedule',
 };
 
 // Switch between app views and lazy-load data when needed.
@@ -1520,6 +1750,7 @@ function showView(name) {
   if (name === 'maintenance') initMaintenance();
   if (name === 'trashBins') initTrashBins();
   if (name === 'ram') initRam();
+  if (name === 'schedule') initSchedule();
 }
 
 // ── Maintenance ───────────────────────────────────────────────────────────────
@@ -1603,6 +1834,75 @@ async function runMaintTask(taskId) {
   btn.disabled  = false;
   btn.classList.remove('running');
   btn.textContent = 'Run Again';
+}
+
+// ── Schedule ──────────────────────────────────────────────────────────────────
+let schedLoaded = false;
+
+function fmtBytes(b) {
+  if (b >= 1073741824) return (b / 1073741824).toFixed(2) + ' GB';
+  if (b >= 1048576)    return (b / 1048576).toFixed(1) + ' MB';
+  if (b >= 1024)       return (b / 1024).toFixed(0) + ' KB';
+  return b + ' B';
+}
+
+function renderScheduleUI(cfg) {
+  document.getElementById('schedEnabled').checked      = !!cfg.enabled;
+  document.getElementById('schedInterval').value       = String(cfg.intervalHours || 24);
+
+  const lastEl = document.getElementById('schedLastRun');
+  const nextEl = document.getElementById('schedNextRun');
+
+  if (cfg.lastRunAt) {
+    lastEl.textContent = new Date(cfg.lastRunAt).toLocaleString();
+    if (cfg.enabled) {
+      const nextMs = cfg.lastRunAt + (cfg.intervalHours * 3600000);
+      nextEl.textContent = new Date(nextMs).toLocaleString();
+    } else {
+      nextEl.textContent = 'Disabled';
+    }
+  } else {
+    lastEl.textContent = 'Never';
+    nextEl.textContent = cfg.enabled ? 'Within the next interval' : 'Disabled';
+  }
+
+  const titleEl   = document.getElementById('schedResultTitle');
+  const resultsEl = document.getElementById('schedResults');
+
+  if (cfg.lastResult) {
+    titleEl.style.display = '';
+    resultsEl.innerHTML = Object.entries(cfg.lastResult).map(([cat, data]) => `
+      <div class="sched-result-card">
+        <div class="sched-result-cat">${cat}</div>
+        <div class="sched-result-size">${fmtBytes(data?.sizeBytes || 0)}</div>
+        <div class="sched-result-files">${(data?.fileCount || 0).toLocaleString()} files</div>
+      </div>
+    `).join('');
+  } else {
+    titleEl.style.display = 'none';
+    resultsEl.innerHTML = '';
+  }
+}
+
+async function initSchedule() {
+  if (!window.cleanos) return;
+
+  const cfg = await window.cleanos.scheduleGet();
+  renderScheduleUI(cfg);
+  schedLoaded = true;
+
+  // Listen for background scan completions.
+  window.cleanos.onScheduleScanComplete((data) => {
+    window.cleanos.scheduleGet().then(renderScheduleUI);
+  });
+}
+
+async function onSchedChange() {
+  if (!schedLoaded || !window.cleanos) return;
+  const enabled       = document.getElementById('schedEnabled').checked;
+  const intervalHours = parseInt(document.getElementById('schedInterval').value, 10);
+  const cfg = await window.cleanos.scheduleSet({ enabled, intervalHours });
+  renderScheduleUI(cfg);
 }
 </script>
 </body>

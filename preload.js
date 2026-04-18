@@ -36,4 +36,11 @@ contextBridge.exposeInMainWorld('cleanos', {
   // macOS Full Disk Access
   checkPermissions:    () => ipcRenderer.invoke('check-permissions'),
   openPrivacySettings: () => ipcRenderer.invoke('open-privacy-settings'),
+
+  // Auto-scan schedule
+  scheduleGet: ()      => ipcRenderer.invoke('schedule-get'),
+  scheduleSet: (cfg)   => ipcRenderer.invoke('schedule-set', cfg),
+  onScheduleScanComplete: (cb) => {
+    ipcRenderer.on('schedule-scan-complete', (_e, data) => cb(data));
+  },
 });

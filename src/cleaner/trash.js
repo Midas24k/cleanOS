@@ -86,7 +86,7 @@ async function clean({ dryRun = true } = {}) {
     return { dryRun: false, deleted, freedBytes, failed: [], method: 'osascript' };
   } catch {
     // Fallback: manual deletion — uses all individual files (dirs can't be unlinked)
-    const { deleted, deletedBytes, failed } = deleteFiles(allFiles);
+    const { deleted, deletedBytes, failed } = await deleteFiles(allFiles);
     return { dryRun: false, deleted, freedBytes: deletedBytes, failed, method: 'manual' };
   }
 }

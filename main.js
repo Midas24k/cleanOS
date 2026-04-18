@@ -1,6 +1,6 @@
 // Electron main process entrypoint.
 // Owns the native window lifecycle and brokers file-system operations via IPC.
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Notification } = require('electron');
 const path = require('path');
 const fs   = require('fs');
 const os   = require('os');
@@ -275,6 +275,76 @@ ipcMain.handle('ram-info', () => {
   } catch (err) {
     return { error: err.message };
   }
+});
+
+// ── Auto-Scan Schedule ────────────────────────────────────────────────────────
+
+const SCHEDULE_PATH = path.join(app.getPath('userData'), 'schedule.json');
+
+const DEFAULT_SCHEDULE = { enabled: false, intervalHours: 24, lastRunAt: null, lastResult: null };
+
+function loadSchedule() {
+  try { return { ...DEFAULT_SCHEDULE, ...JSON.parse(fs.readFileSync(SCHEDULE_PATH, 'utf8')) }; }
+  catch { return { ...DEFAULT_SCHEDULE }; }
+}
+
+function saveSchedule(cfg) {
+  fs.mkdirSync(path.dirname(SCHEDULE_PATH), { recursive: true });
+  fs.writeFileSync(SCHEDULE_PATH, JSON.stringify(cfg, null, 2));
+}
+
+let scheduleTimer = null;
+
+function startScheduleTimer(cfg) {
+  if (scheduleTimer) { clearInterval(scheduleTimer); scheduleTimer = null; }
+  if (!cfg.enabled || !cfg.intervalHours) return;
+
+  const intervalMs = cfg.intervalHours * 60 * 60 * 1000;
+
+  // Check every minute if it's time to run.
+  scheduleTimer = setInterval(async () => {
+    const current = loadSchedule();
+    if (!current.enabled) { clearInterval(scheduleTimer); scheduleTimer = null; return; }
+    const now = Date.now();
+    const last = current.lastRunAt || 0;
+    if (now - last < intervalMs) return;
+
+    try {
+      const result = await runWorkerTask({ action: 'scan-all' });
+      current.lastRunAt = now;
+      current.lastResult = result;
+      saveSchedule(current);
+
+      // Notify the renderer so the UI can refresh.
+      BrowserWindow.getAllWindows().forEach(w =>
+        w.webContents.send('schedule-scan-complete', { lastRunAt: now, lastResult: result })
+      );
+
+      if (Notification.isSupported()) {
+        const categories = Object.keys(result);
+        const totalBytes = categories.reduce((s, k) => s + (result[k]?.sizeBytes || 0), 0);
+        const mb = (totalBytes / 1024 / 1024).toFixed(1);
+        new Notification({
+          title: 'CleanOS Auto-Scan Complete',
+          body: `Found ${mb} MB of junk across ${categories.length} categories.`,
+        }).show();
+      }
+    } catch { /* scan failed silently */ }
+  }, 60_000);
+}
+
+app.whenReady().then(() => {
+  const cfg = loadSchedule();
+  startScheduleTimer(cfg);
+});
+
+ipcMain.handle('schedule-get', () => loadSchedule());
+
+ipcMain.handle('schedule-set', (_event, cfg) => {
+  const merged = { ...loadSchedule(), ...cfg };
+  saveSchedule(merged);
+  startScheduleTimer(merged);
+  return merged;
 });
 
 // ── Maintenance ──────────────────────────────────────────────────────────────

@@ -173,7 +173,7 @@ async function clean({ dryRun = true } = {}) {
   }
 
   // Delete temp files
-  const { deleted: tempDeleted, deletedBytes: tempDeletedBytes, failed: tempFailed } = deleteFiles(paths);
+  const { deleted: tempDeleted, deletedBytes: tempDeletedBytes, failed: tempFailed } = await deleteFiles(paths);
 
   // Delete TM snapshots
   const { deleted: snapDeleted, failed: snapFailed } = deleteSnapshots(snapshots.snaps);

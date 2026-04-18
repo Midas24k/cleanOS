@@ -147,7 +147,7 @@ async function clean({ dryRun = true } = {}) {
     };
   }
 
-  const { deleted, deletedBytes, failed } = deleteFiles(paths);
+  const { deleted, deletedBytes, failed } = await deleteFiles(paths);
   return {
     dryRun:     false,
     deleted,
